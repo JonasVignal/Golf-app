@@ -483,16 +483,20 @@ $('saveHoleBtn').addEventListener('click', async () => {
       const shotPlayers = [];
       // Rule 4: 1 pt → "Drik en tår"
       const sipPlayers = [];
-      // Rule 5: 0 pts → "Dame Tee"
+      // Rule 5: 0 pts (triple bogey net) → "Dame Tee"
       const zeroPlayers = [];
+      // Rule 6: 0 pts + even worse (quad bogey+ net) → "Bund din øl"
+      const chugPlayers = [];
       players.forEach(([uid, p]) => {
         const g = h.strokes?.[uid] || 0;
         if (g > 0) {
           const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
+          const nDiff = net(g, ph(d, uid), h.strokeIndex) - h.par;
           if (pts === 4) birdiePlayers.push(p.name);
           if (pts === 3) shotPlayers.push(p.name);
           if (pts === 1) sipPlayers.push(p.name);
-          if (pts === 0) zeroPlayers.push(p.name);
+          if (pts === 0 && nDiff >= 4) chugPlayers.push(p.name);
+          else if (pts === 0 && nDiff >= 3) zeroPlayers.push(p.name);
         }
       });
       if (birdiePlayers.length > 0) {
@@ -501,6 +505,8 @@ $('saveHoleBtn').addEventListener('click', async () => {
         showShotPopup(shotPlayers, currentHole, 'shot');
       } else if (sipPlayers.length > 0) {
         showShotPopup(sipPlayers, currentHole, 'sip');
+      } else if (chugPlayers.length > 0) {
+        showShotPopup(chugPlayers, currentHole, 'chug');
       } else if (zeroPlayers.length > 0) {
         showShotPopup(zeroPlayers, currentHole, 'zero');
       }
@@ -659,6 +665,12 @@ function showShotPopup(playerNames, holeNum, type) {
     $("shotPlayerName").textContent = `🙈 ${names}`;
     $("shotDetail").textContent = `0 point på hul ${holeNum} — tag et shot!`;
     $("shotDismiss").textContent = "Skål! 🥃";
+  } else if (type === "chug") {
+    $("shotPopup").querySelector(".shot-emoji").textContent = "💠";
+    $("shotPopup").querySelector(".shot-title").textContent = "Bund din øl!";
+    $("shotPlayerName").textContent = `😵 ${names}`;
+    $("shotDetail").textContent = `0 point på hul ${holeNum} og en ekstra slag over — BUND!`;
+    $("shotDismiss").textContent = "BUND! 🍺";
   }
 
   $("shotPopup").classList.add("active");

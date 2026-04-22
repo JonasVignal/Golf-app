@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
-//  GolfMate — Multi-device Firebase Realtime Scorecard
-//  Clean rewrite: course DB, tee selection, WHS Playing HCP
+//  GolfMate — 2-7 Player Multiplayer Scorecard
+//  Firebase Realtime Database · WHS Playing Handicap
 // ═══════════════════════════════════════════════════════
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -11,58 +11,46 @@ import {
 import { getDatabase, ref, set, get, update, onValue, off, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// ─── Firebase Config ─────────────────────────────────
+// ─── Firebase ────────────────────────────────────────
 const firebaseConfig = {
-  apiKey:            "AIzaSyDtMT8li6uMOujOQ1xb4Ill5BTInXT2-jM",
-  authDomain:        "golfdanmark.firebaseapp.com",
-  databaseURL:       "https://golfdanmark-default-rtdb.firebaseio.com",
-  projectId:         "golfdanmark",
-  storageBucket:     "golfdanmark.firebasestorage.app",
+  apiKey: "AIzaSyDtMT8li6uMOujOQ1xb4Ill5BTInXT2-jM",
+  authDomain: "golfdanmark.firebaseapp.com",
+  databaseURL: "https://golfdanmark-default-rtdb.firebaseio.com",
+  projectId: "golfdanmark",
+  storageBucket: "golfdanmark.firebasestorage.app",
   messagingSenderId: "403752379611",
-  appId:             "1:403752379611:web:b7eb566ebab9abe398d8fe"
+  appId: "1:403752379611:web:b7eb566ebab9abe398d8fe"
 };
+const fbApp = initializeApp(firebaseConfig);
+const auth  = getAuth(fbApp);
+const db    = getDatabase(fbApp);
 
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getDatabase(app);
-
-// ═══════════════════════════════════════════════════════
-//  COURSE DATABASE
-// ═══════════════════════════════════════════════════════
+// ─── Course Database ─────────────────────────────────
 const COURSES = {
   skyrup: {
-    name: "Skyrup GK",
-    location: "Sweden",
-    par: 71,
-    type: "Parkland (forest + lake holes)",
-    // Hole-by-hole data: par and stroke index for each of the 18 holes
-    pars: [4, 4, 3, 4, 4, 5, 3, 4, 4,  4, 3, 5, 4, 4, 3, 4, 5, 4],
-    si:   [7,11,15, 3, 9,17, 5, 1,13,  8,16, 6, 2,10,18, 4,12,14],
+    name: "Skyrup GK", location: "Sweden", par: 71,
+    pars: [4,4,3,4,4,5,3,4,4, 4,3,5,4,4,3,4,5,4],
+    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
     tees: {
-      yellow: { label: "🟡 Yellow", length: 5860, rating: 70.9, slope: 129 },
-      white:  { label: "⚪ White",  length: 6085, rating: 71.6, slope: 129 },
-      blue:   { label: "🔵 Blue",   length: 5433, rating: 67.9, slope: 123 },
-      red:    { label: "🔴 Red",    length: 5145, rating: 65.2, slope: 117 }
+      yellow: { label:"🟡 Yellow", length:5860, rating:70.9, slope:129 },
+      white:  { label:"⚪ White",  length:6085, rating:71.6, slope:129 },
+      blue:   { label:"🔵 Blue",   length:5433, rating:67.9, slope:123 },
+      red:    { label:"🔴 Red",    length:5145, rating:65.2, slope:117 },
     }
   }
-  // More courses can be added here
 };
+const DEF_PARS = [4,4,3,5,4,3,4,4,5, 4,3,4,5,4,3,4,4,5];
+const DEF_SI   = [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14];
+const PLAYER_COLORS = ["#3dca7a","#5ba8ff","#e879f9","#fb923c","#f87171","#a78bfa","#34d399"];
+const MAX_PLAYERS = 7;
 
-// Fallback for custom courses
-const DEFAULT_PARS = [4,4,3,5,4,3,4,4,5, 4,3,4,5,4,3,4,4,5];
-const DEFAULT_SI   = [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14];
-
-// ─── WHS Playing Handicap Formula ────────────────────
-// PH = HCP_index × (Slope / 113) + (CourseRating − Par)
-function calcPlayingHCP(hcpIndex, slope, rating, par) {
-  return Math.round(hcpIndex * (slope / 113) + (rating - par));
+function calcPH(hcpIdx, slope, rating, par) {
+  return Math.round(hcpIdx * (slope / 113) + (rating - par));
 }
 
-// ═══════════════════════════════════════════════════════
-//  APP STATE
-// ═══════════════════════════════════════════════════════
+// ─── State ───────────────────────────────────────────
 let currentUser = null;
-let myRole      = null;   // "p1" or "p2"
+let myUid       = null;
 let gameId      = null;
 let gameRef     = null;
 let gameData    = null;
@@ -70,58 +58,27 @@ let currentHole = 1;
 let selectedTee = "yellow";
 
 const $ = id => document.getElementById(id);
-const screens = {
-  login:     $("loginScreen"),
-  lobby:     $("lobbyScreen"),
-  waiting:   $("waitingScreen"),
-  scorecard: $("scorecardScreen"),
-  results:   $("resultsScreen"),
-};
-
-function showScreen(name) {
-  Object.values(screens).forEach(s => s.classList.remove("active"));
-  screens[name].classList.add("active");
-}
+const screens = { login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") };
+function show(name) { Object.values(screens).forEach(s => s.classList.remove("active")); screens[name].classList.add("active"); }
 
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-// On mobile, check for redirect result when page loads back
-getRedirectResult(auth).catch(e => {
-  if (e.code && e.code !== "auth/popup-closed-by-user") {
-    console.error("Redirect auth error:", e.code, e.message);
-    $("loginError").textContent = `Auth error: ${e.code}`;
-  }
-});
+getRedirectResult(auth).catch(() => {});
 
 $("signInBtn").addEventListener("click", async () => {
   $("loginError").textContent = "";
   const provider = new GoogleAuthProvider();
-
   if (isMobile) {
-    // Redirect flow — works on all mobile browsers
-    try {
-      await signInWithRedirect(auth, provider);
-    } catch (e) {
-      console.error("Auth error:", e.code, e.message);
-      $("loginError").textContent = `Error: ${e.code}`;
-    }
+    signInWithRedirect(auth, provider).catch(e => { $("loginError").textContent = e.code; });
   } else {
-    // Popup flow — works on desktop
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error("Auth error:", e.code, e.message);
+    try { await signInWithPopup(auth, provider); }
+    catch (e) {
       if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") return;
-      const hints = {
-        "auth/unauthorized-domain": "Domain not authorized. Add it in Firebase → Auth → Settings → Authorized domains.",
-        "auth/operation-not-allowed": "Google sign-in not enabled in Firebase.",
-        "auth/popup-blocked": "Popup blocked. Allow popups for this site.",
-        "auth/network-request-failed": "Network error.",
-      };
-      $("loginError").textContent = hints[e.code] || `Error: ${e.code}`;
+      $("loginError").textContent = e.code === "auth/unauthorized-domain"
+        ? "Add this domain in Firebase → Auth → Authorized domains."
+        : `Error: ${e.code}`;
     }
   }
 });
@@ -130,82 +87,62 @@ $("lobbySignOut").addEventListener("click", () => signOut(auth));
 
 onAuthStateChanged(auth, user => {
   currentUser = user;
+  myUid = user?.uid || null;
   if (user) {
-    // Check for saved in-progress game
-    const savedId   = localStorage.getItem("golfmate_gameId");
-    const savedRole = localStorage.getItem("golfmate_role");
-    if (savedId && savedRole) {
-      gameId  = savedId;
-      myRole  = savedRole;
-      gameRef = ref(db, `games/${gameId}`);
-      attachGameListener();
-      return;
-    }
+    const sid = localStorage.getItem("gm_gid");
+    if (sid) { gameId = sid; gameRef = ref(db, `games/${gameId}`); attachListener(); return; }
     showLobby(user);
-  } else {
-    cleanup();
-    showScreen("login");
-  }
+  } else { cleanup(); show("login"); }
 });
 
 function cleanup() {
   if (gameRef) off(gameRef);
-  gameId = null; myRole = null; gameData = null;
-  localStorage.removeItem("golfmate_gameId");
-  localStorage.removeItem("golfmate_role");
+  gameId = null; gameData = null;
+  localStorage.removeItem("gm_gid");
 }
 
 // ═══════════════════════════════════════════════════════
-//  LOBBY — Course / Tee UI
+//  LOBBY
 // ═══════════════════════════════════════════════════════
 function showLobby(user) {
   $("lobbyPhoto").src = user.photoURL || "";
   $("lobbyName").textContent = user.displayName || user.email;
   updateCourseUI();
-  showScreen("lobby");
+  show("lobby");
 }
 
-// Tabs
-["tabCreate", "tabJoin"].forEach(id => {
+["tabCreate","tabJoin"].forEach(id => {
   $(id).addEventListener("click", () => {
     $("tabCreate").classList.toggle("active", id === "tabCreate");
-    $("tabJoin").classList.toggle("active",   id === "tabJoin");
+    $("tabJoin").classList.toggle("active", id === "tabJoin");
     $("createTab").classList.toggle("active", id === "tabCreate");
-    $("joinTab").classList.toggle("active",   id === "tabJoin");
+    $("joinTab").classList.toggle("active", id === "tabJoin");
   });
 });
 
-// Course select
+// Course / Tee UI
 $("courseSelect").addEventListener("change", updateCourseUI);
-
 function updateCourseUI() {
-  const key     = $("courseSelect").value;
-  const isKnown = key !== "custom";
-
-  $("customCourseGroup").classList.toggle("hidden", isKnown);
-  $("teeGroup").classList.toggle("hidden", !isKnown);
-  $("courseInfoCard").style.display = isKnown ? "grid" : "none";
-
-  if (isKnown) refreshCourseInfo(key, selectedTee);
+  const k = $("courseSelect").value, known = k !== "custom";
+  $("customCourseGroup").classList.toggle("hidden", known);
+  $("teeGroup").classList.toggle("hidden", !known);
+  $("courseInfoCard").style.display = known ? "grid" : "none";
+  if (known) refreshCI(k, selectedTee);
 }
-
-function refreshCourseInfo(courseKey, tee) {
-  const c = COURSES[courseKey];
-  if (!c) return;
+function refreshCI(ck, tee) {
+  const c = COURSES[ck]; if (!c) return;
   const t = c.tees[tee];
   $("ciLength").textContent = t.length + " m";
-  $("ciPar").textContent    = c.par;
+  $("ciPar").textContent = c.par;
   $("ciRating").textContent = t.rating;
-  $("ciSlope").textContent  = t.slope;
+  $("ciSlope").textContent = t.slope;
 }
-
-// Tee buttons
 document.querySelectorAll(".tee-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     selectedTee = btn.dataset.tee;
     document.querySelectorAll(".tee-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    refreshCourseInfo($("courseSelect").value, selectedTee);
+    refreshCI($("courseSelect").value, selectedTee);
   });
 });
 
@@ -213,62 +150,42 @@ document.querySelectorAll(".tee-btn").forEach(btn => {
 //  CREATE GAME
 // ═══════════════════════════════════════════════════════
 $("createGameBtn").addEventListener("click", async () => {
-  const hcpIndex = parseFloat($("myHCP").value) || 0;
-  const scoring  = $("scoringSystem").value;
-  const courseKey = $("courseSelect").value;
+  const hcpIdx = parseFloat($("myHCP").value) || 0;
+  const scoring = $("scoringSystem").value;
+  const ck = $("courseSelect").value;
 
-  let courseName, coursePars, courseSI, teeInfo = null;
-
-  if (courseKey !== "custom" && COURSES[courseKey]) {
-    const c = COURSES[courseKey];
-    const t = c.tees[selectedTee];
+  let courseName, pars, si, teeInfo = null;
+  if (ck !== "custom" && COURSES[ck]) {
+    const c = COURSES[ck], t = c.tees[selectedTee];
     courseName = `${c.name} (${selectedTee})`;
-    coursePars = c.pars;
-    courseSI   = c.si;
-    teeInfo = {
-      key: selectedTee, label: t.label,
-      length: t.length, rating: t.rating, slope: t.slope, par: c.par
-    };
+    pars = c.pars; si = c.si;
+    teeInfo = { key: selectedTee, label: t.label, length: t.length, rating: t.rating, slope: t.slope, par: c.par };
   } else {
     courseName = $("customCourseName").value.trim() || "Golf Course";
-    coursePars = DEFAULT_PARS;
-    courseSI   = DEFAULT_SI;
+    pars = DEF_PARS; si = DEF_SI;
   }
+  const ph = teeInfo ? calcPH(hcpIdx, teeInfo.slope, teeInfo.rating, teeInfo.par) : Math.round(hcpIdx);
 
-  const ph = teeInfo
-    ? calcPlayingHCP(hcpIndex, teeInfo.slope, teeInfo.rating, teeInfo.par)
-    : Math.round(hcpIndex);
-
-  gameId  = genCode();
-  myRole  = "p1";
+  gameId = genCode();
   gameRef = ref(db, `games/${gameId}`);
 
   const holes = {};
-  for (let i = 0; i < 18; i++) {
-    holes[i] = {
-      par: coursePars[i], strokeIndex: courseSI[i],
-      meters: null, p1Strokes: 0, p2Strokes: 0, saved: false
-    };
-  }
+  for (let i = 0; i < 18; i++) holes[i] = { par: pars[i], strokeIndex: si[i], meters: null, strokes: {}, saved: false };
+
+  const players = {};
+  players[myUid] = {
+    name: currentUser.displayName || "Player 1", photo: currentUser.photoURL || "",
+    hcp: hcpIdx, playingHCP: ph, joinOrder: 1
+  };
 
   await set(gameRef, {
-    status: "waiting",
-    courseName, scoringSystem: scoring, teeInfo,
-    createdAt: serverTimestamp(),
-    p1: {
-      uid: currentUser.uid,
-      name: currentUser.displayName || "Player 1",
-      photo: currentUser.photoURL || "",
-      hcp: hcpIndex, playingHCP: ph
-    },
-    p2: null,
-    holes
+    status: "waiting", courseName, scoringSystem: scoring, teeInfo,
+    hostUid: myUid, createdAt: serverTimestamp(), players, holes
   });
 
-  localStorage.setItem("golfmate_gameId", gameId);
-  localStorage.setItem("golfmate_role", "p1");
+  localStorage.setItem("gm_gid", gameId);
   showWaiting();
-  attachGameListener();
+  attachListener();
 });
 
 // ═══════════════════════════════════════════════════════
@@ -277,36 +194,30 @@ $("createGameBtn").addEventListener("click", async () => {
 $("joinGameBtn").addEventListener("click", async () => {
   const code = $("joinCode").value.trim().toUpperCase();
   $("joinError").textContent = "";
-
-  if (code.length !== 6) { $("joinError").textContent = "Enter the 6-character game code."; return; }
+  if (code.length !== 6) { $("joinError").textContent = "Enter a 6-character code."; return; }
 
   const snap = await get(ref(db, `games/${code}`));
-  if (!snap.exists())                { $("joinError").textContent = "Game not found."; return; }
-  const data = snap.val();
-  if (data.status !== "waiting")     { $("joinError").textContent = "Game already started or finished."; return; }
-  if (data.p1?.uid === currentUser.uid) { $("joinError").textContent = "You created this game."; return; }
+  if (!snap.exists()) { $("joinError").textContent = "Game not found."; return; }
+  const d = snap.val();
+  if (d.status !== "waiting") { $("joinError").textContent = "Game already started."; return; }
+  const pCount = d.players ? Object.keys(d.players).length : 0;
+  if (pCount >= MAX_PLAYERS) { $("joinError").textContent = "Game is full (7 players max)."; return; }
+  if (d.players && d.players[myUid]) { $("joinError").textContent = "You're already in this game."; return; }
 
-  const hcpIndex = parseFloat($("myHCP").value) || 0;
-  const ti = data.teeInfo;
-  const ph = ti ? calcPlayingHCP(hcpIndex, ti.slope, ti.rating, ti.par) : Math.round(hcpIndex);
+  const hcpIdx = parseFloat($("myHCP").value) || 0;
+  const ti = d.teeInfo;
+  const ph = ti ? calcPH(hcpIdx, ti.slope, ti.rating, ti.par) : Math.round(hcpIdx);
 
-  gameId  = code;
-  myRole  = "p2";
+  gameId = code;
   gameRef = ref(db, `games/${gameId}`);
 
-  await update(gameRef, {
-    p2: {
-      uid: currentUser.uid,
-      name: currentUser.displayName || "Player 2",
-      photo: currentUser.photoURL || "",
-      hcp: hcpIndex, playingHCP: ph
-    },
-    status: "active"
+  await update(ref(db, `games/${gameId}/players/${myUid}`), {
+    name: currentUser.displayName || "Player", photo: currentUser.photoURL || "",
+    hcp: hcpIdx, playingHCP: ph, joinOrder: pCount + 1
   });
 
-  localStorage.setItem("golfmate_gameId", gameId);
-  localStorage.setItem("golfmate_role", "p2");
-  attachGameListener();
+  localStorage.setItem("gm_gid", gameId);
+  attachListener();
 });
 
 // ═══════════════════════════════════════════════════════
@@ -314,9 +225,7 @@ $("joinGameBtn").addEventListener("click", async () => {
 // ═══════════════════════════════════════════════════════
 function showWaiting() {
   $("displayGameCode").textContent = gameId;
-  $("w1Photo").src = currentUser.photoURL || "";
-  $("w1Name").textContent = currentUser.displayName || "You";
-  showScreen("waiting");
+  show("waiting");
 }
 
 $("copyCodeBtn").addEventListener("click", () => {
@@ -328,104 +237,109 @@ $("copyCodeBtn").addEventListener("click", () => {
 
 $("cancelGameBtn").addEventListener("click", async () => {
   if (gameRef) await update(gameRef, { status: "cancelled" });
-  cleanup();
-  showLobby(currentUser);
+  cleanup(); showLobby(currentUser);
 });
+
+$("startRoundBtn").addEventListener("click", async () => {
+  if (gameRef) await update(gameRef, { status: "active" });
+});
+
+function renderWaiting(d) {
+  const players = d.players ? Object.entries(d.players) : [];
+  const sorted = players.sort((a,b) => a[1].joinOrder - b[1].joinOrder);
+  $("playerCount").textContent = `${sorted.length} / ${MAX_PLAYERS} players`;
+
+  const slots = $("playerSlots"); slots.innerHTML = "";
+  for (let i = 0; i < MAX_PLAYERS; i++) {
+    const div = document.createElement("div");
+    div.className = "player-slot";
+    if (i < sorted.length) {
+      const [uid, p] = sorted[i];
+      div.classList.add("filled");
+      if (uid === d.hostUid) div.classList.add("host-slot");
+      div.innerHTML = `
+        <img src="${p.photo||""}" alt="" class="slot-photo" style="border-color:${PLAYER_COLORS[i]}"/>
+        <div class="slot-info">
+          <div class="slot-name">${p.name}${uid === d.hostUid ? " 👑" : ""}</div>
+          <div class="slot-detail">HCP ${p.hcp} → PH ${p.playingHCP}</div>
+        </div>`;
+    } else {
+      div.innerHTML = `<div class="slot-placeholder">${i+1}</div><div class="slot-info"><div class="slot-name" style="color:var(--tx-d)">Open slot</div></div>`;
+    }
+    slots.appendChild(div);
+  }
+
+  // Start button: only host sees it, and only when 2+ players
+  const isHost = myUid === d.hostUid;
+  const canStart = sorted.length >= 2;
+  $("startRoundBtn").classList.toggle("hidden", !isHost || !canStart);
+  $("startHint").textContent = isHost
+    ? (canStart ? "" : "Need at least 2 players to start")
+    : "Waiting for host to start the round…";
+}
 
 // ═══════════════════════════════════════════════════════
 //  REALTIME LISTENER
 // ═══════════════════════════════════════════════════════
-function attachGameListener() {
+function attachListener() {
   if (gameRef) off(gameRef);
-  onValue(gameRef, snap => {
-    if (!snap.exists()) return;
-    gameData = snap.val();
-    handleUpdate(gameData);
-  });
+  onValue(gameRef, snap => { if (!snap.exists()) return; gameData = snap.val(); handleUpdate(gameData); });
 }
 
 function handleUpdate(d) {
-  if (!d) return;
-
-  if (d.status === "cancelled") {
-    alert("Game was cancelled.");
-    cleanup();
-    showLobby(currentUser);
-    return;
-  }
-
+  if (d.status === "cancelled") { alert("Game cancelled."); cleanup(); showLobby(currentUser); return; }
   if (d.status === "waiting") {
-    if (d.p2) {
-      $("p2WaitCard").style.opacity = "1";
-      $("p2WaitCard").classList.add("joined");
-      $("w2Name").textContent = d.p2.name;
-    }
     if (!screens.waiting.classList.contains("active")) showWaiting();
+    renderWaiting(d);
     return;
   }
-
-  if (d.status === "active" || (d.status === "waiting" && d.p2)) {
-    if (!screens.scorecard.classList.contains("active") && !screens.results.classList.contains("active")) {
-      initScorecard(d);
-    } else {
-      refreshScorecard(d);
-    }
+  if (d.status === "active") {
+    if (!screens.scorecard.classList.contains("active") && !screens.results.classList.contains("active")) initScorecard(d);
+    else refreshScorecard(d);
     return;
   }
-
-  if (d.status === "complete") {
-    showResults(d);
-  }
+  if (d.status === "complete") showResults(d);
 }
 
 // ═══════════════════════════════════════════════════════
 //  SCORING HELPERS
 // ═══════════════════════════════════════════════════════
-function getHCP(d, role) {
-  return d[role]?.playingHCP ?? d[role]?.hcp ?? 0;
+function getPlayers(d) {
+  return Object.entries(d.players || {}).sort((a,b) => a[1].joinOrder - b[1].joinOrder);
 }
+function ph(d, uid) { return d.players?.[uid]?.playingHCP ?? d.players?.[uid]?.hcp ?? 0; }
+function xtra(phcp, si) { const b = Math.floor(phcp/18), r = Math.round(phcp%18); return b + (si<=r?1:0); }
+function net(gross, phcp, si) { return gross - xtra(phcp, si); }
+function stab(gross, par, phcp, si) { return gross ? Math.max(0, par+2 - net(gross,phcp,si)) : 0; }
 
-function extraStrokes(playHCP, si) {
-  const base = Math.floor(playHCP / 18);
-  const rem  = Math.round(playHCP % 18);
-  return base + (si <= rem ? 1 : 0);
-}
-
-function netScore(gross, playHCP, si) {
-  return gross - extraStrokes(playHCP, si);
-}
-
-function stableford(gross, par, playHCP, si) {
-  if (!gross) return 0;
-  return Math.max(0, par + 2 - netScore(gross, playHCP, si));
+function totals(d, uid) {
+  const h = ph(d, uid); let s=0, n=0, p=0;
+  Object.values(d.holes).forEach(hole => {
+    if (!hole.saved) return;
+    const g = hole.strokes?.[uid] || 0;
+    s += g; n += net(g, h, hole.strokeIndex); p += stab(g, hole.par, h, hole.strokeIndex);
+  });
+  return { strokes: s, net: n, pts: p };
 }
 
 // ═══════════════════════════════════════════════════════
 //  SCORECARD INIT
 // ═══════════════════════════════════════════════════════
 function initScorecard(d) {
-  const p1 = d.p1, p2 = d.p2;
-  const me  = myRole === "p1" ? p1 : p2;
-  const opp = myRole === "p1" ? p2 : p1;
-
   $("headerCourseName").textContent = d.courseName;
-  $("roundDate").textContent = new Date().toLocaleDateString("en-GB", {
-    weekday: "short", year: "numeric", month: "short", day: "numeric"
+  $("roundDate").textContent = new Date().toLocaleDateString("en-GB", { weekday:"short", year:"numeric", month:"short", day:"numeric" });
+
+  // Header chips
+  const chips = $("headerChips"); chips.innerHTML = "";
+  getPlayers(d).forEach(([uid, p], i) => {
+    chips.innerHTML += `<div class="chip" style="border-color:${PLAYER_COLORS[i]}"><img src="${p.photo||""}" class="chip-photo"/><span>${short(p.name)}</span><span class="chip-hcp">PH ${ph(d,uid)}</span></div>`;
   });
 
-  $("hP1Photo").src = p1.photo || ""; $("hP1Name").textContent = short(p1.name);
-  $("hP1HCP").textContent = `PH ${getHCP(d,"p1")}`;
-  $("hP2Photo").src = p2?.photo || ""; $("hP2Name").textContent = short(p2?.name || "P2");
-  $("hP2HCP").textContent = `PH ${getHCP(d,"p2")}`;
+  // My card
+  const me = d.players[myUid];
+  $("myCardPhoto").src = me?.photo || ""; $("myCardName").textContent = short(me?.name || "You");
 
-  $("myCardPhoto").src = me.photo || ""; $("myCardName").textContent = short(me.name);
-  $("oppCardPhoto").src = opp?.photo || ""; $("oppCardName").textContent = short(opp?.name || "Opponent");
-  $("myBannerLabel").textContent = short(me.name);
-  $("oppBannerLabel").textContent = short(opp?.name || "Opponent");
-  $("thMyName").textContent = short(me.name);
-  $("thOppName").textContent = short(opp?.name || "Opp");
-
-  // Build hole nav
+  // Hole nav
   const nav = $("holeNav"); nav.innerHTML = "";
   for (let i = 1; i <= 18; i++) {
     const btn = document.createElement("button");
@@ -433,38 +347,54 @@ function initScorecard(d) {
     btn.addEventListener("click", () => loadHole(i));
     nav.appendChild(btn);
   }
-
   // SI dropdown
   const sel = $("holeSI"); sel.innerHTML = "";
-  for (let i = 1; i <= 18; i++) {
-    const o = document.createElement("option"); o.value = i; o.textContent = i; sel.appendChild(o);
-  }
+  for (let i = 1; i <= 18; i++) { const o = document.createElement("option"); o.value=i; o.textContent=i; sel.appendChild(o); }
 
-  showScreen("scorecard");
+  show("scorecard");
   currentHole = 1;
   loadHole(1, d);
 }
 
 // ═══════════════════════════════════════════════════════
-//  LOAD / REFRESH HOLE
+//  LOAD HOLE
 // ═══════════════════════════════════════════════════════
 function loadHole(n, d) {
   d = d || gameData; if (!d) return;
   currentHole = n;
-  const h = d.holes[n - 1];
-  const opp = myRole === "p1" ? "p2" : "p1";
+  const h = d.holes[n-1];
 
   $("currentHoleTitle").textContent = `Hole ${n}`;
-  $("holePar").value   = h.par;
-  $("holeSI").value    = h.strokeIndex;
+  $("holePar").value = h.par;
+  $("holeSI").value = h.strokeIndex;
   $("holeMeters").value = h.meters || "";
 
-  $("myStrokesVal").textContent  = h[`${myRole}Strokes`] || 0;
-  $("oppStrokesVal").textContent = h[`${opp}Strokes`] || "—";
+  // My strokes
+  $("myStrokesVal").textContent = h.strokes?.[myUid] || 0;
+  updateMyBreakdown(d, n);
 
-  updateBreakdown(d, n);
+  // Others grid
+  const grid = $("othersGrid"); grid.innerHTML = "";
+  const players = getPlayers(d);
+  players.forEach(([uid, p], i) => {
+    if (uid === myUid) return;
+    const g = h.strokes?.[uid] || 0;
+    const hcp = ph(d, uid);
+    const si = h.strokeIndex, par = h.par;
+    const nv = g ? net(g, hcp, si) : "—";
+    const pv = g ? stab(g, par, hcp, si) : "—";
+    const div = document.createElement("div");
+    div.className = "other-card";
+    div.style.borderTop = `3px solid ${PLAYER_COLORS[i]}`;
+    div.innerHTML = `<img src="${p.photo||""}" class="other-photo" style="border-color:${PLAYER_COLORS[i]}"/>
+      <div class="other-name">${short(p.name)}</div>
+      <div class="other-strokes">${g || "—"}</div>
+      <div class="other-detail">Net ${nv} · Pts ${pv}</div>`;
+    grid.appendChild(div);
+  });
+
   updateNav(d);
-  updateBanner(d);
+  updateLeaderboard(d);
   renderTable(d);
 }
 
@@ -473,103 +403,77 @@ function refreshScorecard(d) {
   loadHole(currentHole, d);
 }
 
-// ═══════════════════════════════════════════════════════
-//  HOLE BREAKDOWN
-// ═══════════════════════════════════════════════════════
-function updateBreakdown(d, n) {
-  d = d || gameData; n = n || currentHole;
-  if (!d) return;
-  const h   = d.holes[n - 1];
-  const par = parseInt($("holePar").value);
-  const si  = parseInt($("holeSI").value);
-  const opp = myRole === "p1" ? "p2" : "p1";
-  const myH = getHCP(d, myRole), oppH = getHCP(d, opp);
-  const mg  = h[`${myRole}Strokes`] || 0;
-  const og  = h[`${opp}Strokes`]    || 0;
-
-  $("myNetScore").textContent  = mg ? netScore(mg, myH, si)            : "—";
-  $("oppNetScore").textContent = og ? netScore(og, oppH, si)           : "—";
-  $("myPtsScore").textContent  = mg ? stableford(mg, par, myH, si) + " pts" : "—";
-  $("oppPtsScore").textContent = og ? stableford(og, par, oppH, si) + " pts" : "—";
+function updateMyBreakdown(d, n) {
+  const h = d.holes[n-1];
+  const g = h.strokes?.[myUid] || 0;
+  const hcp = ph(d, myUid), si = h.strokeIndex, par = h.par;
+  $("myNetScore").textContent = g ? net(g, hcp, si) : "—";
+  $("myPtsScore").textContent = g ? stab(g, par, hcp, si) + " pts" : "—";
 }
 
 // ═══════════════════════════════════════════════════════
-//  SCORE BANNER
+//  LEADERBOARD BAR
 // ═══════════════════════════════════════════════════════
-function updateBanner(d) {
-  d = d || gameData; if (!d) return;
-  const opp = myRole === "p1" ? "p2" : "p1";
-  const myH = getHCP(d, myRole), oppH = getHCP(d, opp);
+function updateLeaderboard(d) {
+  const bar = $("leaderboardBar"); bar.innerHTML = "";
+  const players = getPlayers(d);
+  const ranked = players.map(([uid, p], i) => ({ uid, ...p, idx: i, ...totals(d, uid) }))
+    .sort((a, b) => b.pts - a.pts || a.net - b.net);
 
-  let mS=0, oS=0, mN=0, oN=0, mP=0, oP=0;
-  Object.values(d.holes).forEach(h => {
-    if (!h.saved) return;
-    const mg = h[`${myRole}Strokes`] || 0, og = h[`${opp}Strokes`] || 0;
-    mS += mg; oS += og;
-    mN += netScore(mg, myH, h.strokeIndex);
-    oN += netScore(og, oppH, h.strokeIndex);
-    mP += stableford(mg, h.par, myH, h.strokeIndex);
-    oP += stableford(og, h.par, oppH, h.strokeIndex);
+  ranked.forEach((p, rank) => {
+    const div = document.createElement("div");
+    div.className = "lb-card" + (p.uid === myUid ? " is-me" : "");
+    div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
+    const medal = rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : `#${rank+1}`;
+    div.innerHTML = `<div class="lb-rank">${medal}</div>
+      <div class="lb-name">${short(p.name)}</div>
+      <div class="lb-pts">${p.pts}</div>
+      <div class="lb-lbl">pts · ${p.strokes} strokes</div>`;
+    bar.appendChild(div);
   });
-
-  $("myTotalStrokes").textContent = mS; $("oppTotalStrokes").textContent = oS;
-  $("myTotalNet").textContent = mN; $("oppTotalNet").textContent = oN;
-  $("myTotalPts").textContent = mP; $("oppTotalPts").textContent = oP;
-
-  const saved = Object.values(d.holes).filter(h => h.saved).length;
-  if (!saved)       $("leadBadge").textContent = "🏌️ Playing";
-  else if (mP > oP) $("leadBadge").textContent = "🏆 You lead!";
-  else if (oP > mP) $("leadBadge").textContent = `🏆 ${short(d[opp]?.name || "Opp")} leads`;
-  else              $("leadBadge").textContent = "⚖️ All Square";
 }
 
 // ═══════════════════════════════════════════════════════
-//  STROKE COUNTERS
+//  STROKE COUNTER & HOLE META
 // ═══════════════════════════════════════════════════════
 $("myPlus").addEventListener("click", () => adj(1));
 $("myMinus").addEventListener("click", () => adj(-1));
 
 async function adj(delta) {
   if (!gameData) return;
-  const h = gameData.holes[currentHole - 1];
-  const k = `${myRole}Strokes`;
-  const next = Math.max(0, (h[k] || 0) + delta);
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { [k]: next });
+  const h = gameData.holes[currentHole-1];
+  const cur = h.strokes?.[myUid] || 0;
+  await update(ref(db, `games/${gameId}/holes/${currentHole-1}/strokes`), { [myUid]: Math.max(0, cur+delta) });
 }
 
-// Hole meta changes
 $("holePar").addEventListener("change", async () => {
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { par: parseInt($("holePar").value) });
+  await update(ref(db, `games/${gameId}/holes/${currentHole-1}`), { par: parseInt($("holePar").value) });
 });
 $("holeSI").addEventListener("change", async () => {
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { strokeIndex: parseInt($("holeSI").value) });
+  await update(ref(db, `games/${gameId}/holes/${currentHole-1}`), { strokeIndex: parseInt($("holeSI").value) });
 });
 $("holeMeters").addEventListener("change", async () => {
   const m = $("holeMeters").value;
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { meters: m ? parseInt(m) : null });
+  await update(ref(db, `games/${gameId}/holes/${currentHole-1}`), { meters: m ? parseInt(m) : null });
 });
 
 // ═══════════════════════════════════════════════════════
 //  SAVE HOLE / NAV
 // ═══════════════════════════════════════════════════════
 $("saveHoleBtn").addEventListener("click", async () => {
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { saved: true });
+  await update(ref(db, `games/${gameId}/holes/${currentHole-1}`), { saved: true });
   if (currentHole < 18) { currentHole++; loadHole(currentHole); }
   else await update(gameRef, { status: "complete" });
 });
 
-$("prevHole").addEventListener("click", () => { if (currentHole > 1) loadHole(currentHole - 1); });
-$("nextHole").addEventListener("click", () => { if (currentHole < 18) loadHole(currentHole + 1); });
-$("endRoundBtn").addEventListener("click", async () => {
-  if (confirm("End the round now?")) await update(gameRef, { status: "complete" });
-});
+$("prevHole").addEventListener("click", () => { if (currentHole > 1) loadHole(currentHole-1); });
+$("nextHole").addEventListener("click", () => { if (currentHole < 18) loadHole(currentHole+1); });
+$("endRoundBtn").addEventListener("click", async () => { if (confirm("End round now?")) await update(gameRef, { status: "complete" }); });
 
 function updateNav(d) {
-  d = d || gameData;
   for (let i = 1; i <= 18; i++) {
     const btn = $(`hn${i}`); if (!btn) continue;
-    const h = d?.holes?.[i - 1];
-    btn.className = "hole-nav-btn" + (h?.saved ? " saved" : "") + (i === currentHole ? " active" : "");
+    btn.className = "hole-nav-btn" + (d.holes?.[i-1]?.saved ? " saved" : "") + (i === currentHole ? " active" : "");
   }
   $("prevHole").disabled = currentHole === 1;
   $("nextHole").disabled = currentHole === 18;
@@ -578,111 +482,99 @@ function updateNav(d) {
 // ═══════════════════════════════════════════════════════
 //  SCORECARD TABLE
 // ═══════════════════════════════════════════════════════
-function badge(gross, par, hcp, si) {
-  if (!gross) return `<span class="par-score no-score">—</span>`;
-  const diff = netScore(gross, hcp, si) - par;
+function badge(g, par, hcp, si) {
+  if (!g) return `<span class="no-score">—</span>`;
+  const d = net(g, hcp, si) - par;
   let c = "par-score";
-  if (diff <= -2)     c += " eagle";
-  else if (diff === -1) c += " birdie";
-  else if (diff === 0)  { /* par, no extra class */ }
-  else if (diff === 1)  c += " bogey";
-  else if (diff === 2)  c += " double-bogey";
-  else                  c += " triple-plus";
-  return `<span class="${c}">${gross}</span>`;
+  if (d <= -2) c += " eagle"; else if (d === -1) c += " birdie";
+  else if (d === 1) c += " bogey"; else if (d === 2) c += " double-bogey"; else if (d > 2) c += " triple-plus";
+  return `<span class="${c}">${g}</span>`;
 }
 
 function renderTable(d) {
-  d = d || gameData; if (!d) return;
-  const opp = myRole === "p1" ? "p2" : "p1";
-  const myH = getHCP(d, myRole), oppH = getHCP(d, opp);
+  if (!d) return;
+  const players = getPlayers(d);
 
+  // thead
+  const thead = $("scorecardHead");
+  thead.innerHTML = `<tr><th>Hole</th><th>Par</th><th>SI</th>${players.map(([,p]) => `<th>${short(p.name)}</th><th>Pts</th>`).join("")}</tr>`;
+
+  // tbody
   const tbody = $("scorecardBody"); tbody.innerHTML = "";
-  let tP=0, mS=0, oS=0, mN=0, oN=0, mPt=0, oPt=0;
+  const totP = new Array(players.length).fill(0);
+  const totS = new Array(players.length).fill(0);
+  const totPts = new Array(players.length).fill(0);
+  let parSum = 0;
 
-  Object.values(d.holes).forEach((h, i) => {
-    const mg = h[`${myRole}Strokes`] || 0, og = h[`${opp}Strokes`] || 0;
-    const mn = mg ? netScore(mg, myH, h.strokeIndex) : "—";
-    const on = og ? netScore(og, oppH, h.strokeIndex) : "—";
-    const mp = mg ? stableford(mg, h.par, myH, h.strokeIndex) : "—";
-    const op = og ? stableford(og, h.par, oppH, h.strokeIndex) : "—";
-
-    if (h.saved) {
-      tP += h.par; mS += mg; oS += og;
-      if (typeof mn === "number") mN += mn;
-      if (typeof on === "number") oN += on;
-      if (typeof mp === "number") mPt += mp;
-      if (typeof op === "number") oPt += op;
-    }
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td><strong>${i+1}</strong></td><td>${h.par}</td><td>${h.strokeIndex}</td><td>${h.meters?h.meters+"m":"—"}</td>
-      <td>${badge(mg,h.par,myH,h.strokeIndex)}</td><td>${typeof mn==="number"?mn:"—"}</td><td>${typeof mp==="number"?mp:"—"}</td>
-      <td>${badge(og,h.par,oppH,h.strokeIndex)}</td><td>${typeof on==="number"?on:"—"}</td><td>${typeof op==="number"?op:"—"}</td>`;
-    tbody.appendChild(tr);
+  Object.values(d.holes).forEach((h, idx) => {
+    let cells = `<td><strong>${idx+1}</strong></td><td>${h.par}</td><td>${h.strokeIndex}</td>`;
+    players.forEach(([uid], pi) => {
+      const g = h.strokes?.[uid] || 0;
+      const hcp = ph(d, uid);
+      const pts = g ? stab(g, h.par, hcp, h.strokeIndex) : 0;
+      cells += `<td>${badge(g, h.par, hcp, h.strokeIndex)}</td><td>${g ? pts : "—"}</td>`;
+      if (h.saved) { totS[pi] += g; totPts[pi] += pts; }
+    });
+    if (h.saved) parSum += h.par;
+    const tr = document.createElement("tr"); tr.innerHTML = cells; tbody.appendChild(tr);
   });
 
+  // tfoot
   const saved = Object.values(d.holes).filter(h => h.saved).length;
-  $("scorecardFoot").innerHTML = saved ? `<tr>
-    <td>Total</td><td>${tP}</td><td>—</td><td>—</td>
-    <td>${mS}</td><td>${mN}</td><td><strong style="color:var(--gold)">${mPt} pts</strong></td>
-    <td>${oS}</td><td>${oN}</td><td><strong style="color:var(--gold)">${oPt} pts</strong></td>
-  </tr>` : "";
+  $("scorecardFoot").innerHTML = saved ? `<tr><td>Total</td><td>${parSum}</td><td>—</td>${
+    players.map((_, i) => `<td>${totS[i]}</td><td><strong style="color:var(--gold)">${totPts[i]}</strong></td>`).join("")
+  }</tr>` : "";
 }
 
 // ═══════════════════════════════════════════════════════
 //  RESULTS
 // ═══════════════════════════════════════════════════════
 function showResults(d) {
-  d = d || gameData; if (!d) return;
-  const p1 = d.p1, p2 = d.p2 || {};
-  const h1 = getHCP(d, "p1"), h2 = getHCP(d, "p2");
+  if (!d) return;
+  $("resultsCourse").textContent = d.courseName;
+  $("resultsDate").textContent = new Date().toLocaleDateString("en-GB", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
 
-  let s1=0,s2=0,n1=0,n2=0,pt1=0,pt2=0;
-  Object.values(d.holes).forEach(h => {
-    if (!h.saved) return;
-    const g1 = h.p1Strokes||0, g2 = h.p2Strokes||0;
-    s1+=g1; s2+=g2;
-    n1+=netScore(g1,h1,h.strokeIndex); n2+=netScore(g2,h2,h.strokeIndex);
-    pt1+=stableford(g1,h.par,h1,h.strokeIndex); pt2+=stableford(g2,h.par,h2,h.strokeIndex);
+  const players = getPlayers(d);
+  const ranked = players.map(([uid, p], i) => ({ uid, ...p, idx: i, ...totals(d, uid) }))
+    .sort((a,b) => b.pts - a.pts || a.net - b.net);
+
+  const winner = ranked[0];
+  $("winnerBanner").textContent = ranked.length > 1 && ranked[0].pts > ranked[1].pts
+    ? `🏆 ${winner.name} wins with ${winner.pts} points!`
+    : ranked.length > 1 && ranked[0].pts === ranked[1].pts
+      ? `⚖️ It's a tie at ${ranked[0].pts} points!`
+      : `🏆 ${winner.name} — ${winner.pts} points`;
+
+  const grid = $("resultsGrid"); grid.innerHTML = "";
+  ranked.forEach((p, rank) => {
+    const medal = rank === 0 ? "🥇 1st" : rank === 1 ? "🥈 2nd" : rank === 2 ? "🥉 3rd" : `${rank+1}th`;
+    const div = document.createElement("div");
+    div.className = "result-card" + (rank === 0 ? " winner" : "");
+    div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
+    div.innerHTML = `
+      <div class="result-rank">${medal}</div>
+      <img src="${p.photo||""}" class="result-photo" style="border-color:${PLAYER_COLORS[p.idx]}"/>
+      <h3>${p.name}</h3>
+      <div class="result-stats">
+        <div class="stat-row"><span>HCP Index</span><strong>${p.hcp}</strong></div>
+        <div class="stat-row"><span>Playing HCP</span><strong>${p.playingHCP}</strong></div>
+        <div class="stat-row"><span>Strokes</span><strong>${p.strokes}</strong></div>
+        <div class="stat-row"><span>Net</span><strong>${p.net}</strong></div>
+        <div class="stat-row highlight"><span>Stableford</span><strong>${p.pts} pts</strong></div>
+      </div>`;
+    grid.appendChild(div);
   });
 
-  $("resultsCourse").textContent = d.courseName;
-  $("resultsDate").textContent = new Date().toLocaleDateString("en-GB", {weekday:"long",year:"numeric",month:"long",day:"numeric"});
-
-  if (pt1 > pt2)      $("winnerBanner").textContent = `🏆 ${p1.name} wins with ${pt1} pts!`;
-  else if (pt2 > pt1) $("winnerBanner").textContent = `🏆 ${p2.name||"P2"} wins with ${pt2} pts!`;
-  else                $("winnerBanner").textContent = "⚖️ It's a tie!";
-
-  $("rP1Photo").src = p1.photo||""; $("rP1Name").textContent = p1.name;
-  $("rP1HCPIdx").textContent = p1.hcp; $("rP1PlayHCP").textContent = p1.playingHCP ?? p1.hcp;
-  $("rP1Strokes").textContent = s1; $("rP1Net").textContent = n1; $("rP1Pts").textContent = pt1 + " pts";
-
-  $("rP2Photo").src = p2.photo||""; $("rP2Name").textContent = p2.name||"Player 2";
-  $("rP2HCPIdx").textContent = p2.hcp??0; $("rP2PlayHCP").textContent = p2.playingHCP ?? p2.hcp ?? 0;
-  $("rP2Strokes").textContent = s2; $("rP2Net").textContent = n2; $("rP2Pts").textContent = pt2 + " pts";
-
-  showScreen("results");
+  show("results");
 }
 
-$("playAgainBtn").addEventListener("click", () => {
-  cleanup();
-  currentHole = 1;
-  showLobby(currentUser);
-});
+$("playAgainBtn").addEventListener("click", () => { cleanup(); currentHole = 1; showLobby(currentUser); });
 
 // ═══════════════════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════════════════
-function genCode() {
-  const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({length:6}, () => c[Math.floor(Math.random()*c.length)]).join("");
-}
+function genCode() { const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(""); }
+function short(n) { if (!n) return "Player"; const p=n.trim().split(" "); return p.length>=2 ? p[0]+" "+p[1][0]+"." : p[0]; }
 
-function short(name) {
-  if (!name) return "Player";
-  const p = name.trim().split(" ");
-  return p.length >= 2 ? p[0] + " " + p[1][0] + "." : p[0];
-}
-
-// Init course UI on load
+// Init
 updateCourseUI();

@@ -46,6 +46,17 @@ const COURSES = {
       t53: { label:"🔵 53", length:5250, rating:68.1, slope:119 },
       t44: { label:"🔴 44", length:4644, rating:111, slope:111 }
     }
+  },
+  huseso: {
+    name: "Husesø GK (18 holes)", location: "Denmark", par: 72,
+    pars: [4,4,3,5,4,3,4,4,5, 4,4,3,5,4,3,4,4,5],
+    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    tees: {
+      t58: { label:"⚫ 58", length:6010, rating:73.0, slope:131 },
+      t55: { label:"🟡 55", length:5720, rating:71.5, slope:128 },
+      t53: { label:"🔵 53", length:5380, rating:69.7, slope:123 },
+      t48: { label:"🔴 48", length:4956, rating:67.4, slope:118 }
+    }
   }
 };
 const DEF_PARS = [4,4,3,5,4,3,4,4,5, 4,3,4,5,4,3,4,4,5];

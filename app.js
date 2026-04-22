@@ -479,15 +479,20 @@ $('saveHoleBtn').addEventListener('click', async () => {
     } else {
       // Rule 2: Exactly 3 Stableford points → "Giv et shot til en makker"
       const shotPlayers = [];
+      // Rule 3: Exactly 1 Stableford point → "Drik en tår"
+      const sipPlayers = [];
       players.forEach(([uid, p]) => {
         const g = h.strokes?.[uid] || 0;
         if (g > 0) {
           const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
           if (pts === 3) shotPlayers.push(p.name);
+          if (pts === 1) sipPlayers.push(p.name);
         }
       });
       if (shotPlayers.length > 0) {
         showShotPopup(shotPlayers, currentHole, 'shot');
+      } else if (sipPlayers.length > 0) {
+        showShotPopup(sipPlayers, currentHole, 'sip');
       }
     }
   }
@@ -615,14 +620,18 @@ function showShotPopup(playerNames, holeNum, type) {
     : playerNames.slice(0, -1).join(", ") + " og " + playerNames[playerNames.length - 1];
 
   if (type === "ace") {
-    // Hole-in-one → "Giv en runde i klubhuset"
     $("shotPopup").querySelector(".shot-emoji").textContent = "🏌️‍♂️🕳️";
     $("shotPopup").querySelector(".shot-title").textContent = "Giv en runde i klubhuset!";
     $("shotPlayerName").textContent = `🎯 ${names}`;
     $("shotDetail").textContent = `Hole-in-one på hul ${holeNum}! Det koster en runde!`;
     $("shotDismiss").textContent = "Skål! 🍺";
+  } else if (type === "sip") {
+    $("shotPopup").querySelector(".shot-emoji").textContent = "😬";
+    $("shotPopup").querySelector(".shot-title").textContent = "Uhh, 1 Point. Drik en tår!";
+    $("shotPlayerName").textContent = `😅 ${names}`;
+    $("shotDetail").textContent = `Kun 1 point på hul ${holeNum} — det koster en tår!`;
+    $("shotDismiss").textContent = "Bund! 🍺";
   } else {
-    // 3 Stableford points → "Giv et shot til en makker"
     $("shotPopup").querySelector(".shot-emoji").textContent = "🍻";
     $("shotPopup").querySelector(".shot-title").textContent = "Giv et shot til en makker!";
     $("shotPlayerName").textContent = `👑 ${names}`;

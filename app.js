@@ -54,6 +54,7 @@ let gameRef     = null;
 let gameData    = null;
 let currentHole = 1;
 let selectedTee = "yellow";
+let seenSavedHoles = null;
 
 const $ = id => document.getElementById(id);
 const screens = { login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") };
@@ -128,6 +129,7 @@ onAuthStateChanged(auth, user => {
 function cleanup() {
   if (gameRef) off(gameRef);
   gameId = null; gameData = null;
+  seenSavedHoles = null;
   localStorage.removeItem("gm_gid");
 }
 
@@ -324,6 +326,20 @@ function handleUpdate(d) {
     return;
   }
   if (d.status === "active") {
+    // ---- Golfkongerne popup sync across all devices ----
+    if (d.scoringSystem === "golfkongerne" && d.holes) {
+      if (!seenSavedHoles) {
+        seenSavedHoles = Array.from({length: 18}, (_, i) => !!(d.holes[i]?.saved));
+      } else {
+        for (let i = 0; i < 18; i++) {
+          if (d.holes[i]?.saved && !seenSavedHoles[i]) {
+            seenSavedHoles[i] = true;
+            checkGolfkongerneRules(d, d.holes[i], i + 1);
+          }
+        }
+      }
+    }
+    // ----------------------------------------------------
     if (!screens.scorecard.classList.contains("active") && !screens.results.classList.contains("active")) initScorecard(d);
     else refreshScorecard(d);
     return;
@@ -491,65 +507,7 @@ $("holeMeters").addEventListener("change", async () => {
 //  SAVE HOLE / NAV
 // ═══════════════════════════════════════════════════════
 $('saveHoleBtn').addEventListener('click', async () => {
-  const d = gameData;
-  const h = d.holes[currentHole - 1];
-
   await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { saved: true });
-
-  // Golfkongerne: check for special rules
-  if (d.scoringSystem === 'golfkongerne') {
-    const players = getPlayers(d);
-
-    // Rule 1: Hole-in-one (1 stroke) → "Giv en runde i klubhuset"
-    const acePlayers = [];
-    players.forEach(([uid, p]) => {
-      const g = h.strokes?.[uid] || 0;
-      if (g === 1) acePlayers.push(p.name);
-    });
-    if (acePlayers.length > 0) {
-      showShotPopup(acePlayers, currentHole, 'ace');
-    } else {
-      // Rule 2: 4 pts → "Giv en makker et om slag"
-      const birdiePlayers = [];
-      // Rule 3: 3 pts → "Giv et shot til en makker"
-      const shotPlayers = [];
-      // Rule 4: 1 pt → "Drik en tår"
-      const sipPlayers = [];
-      // Rule 5: 0 pts (triple bogey net, +3) → "Dame Tee"
-      const zeroPlayers = [];
-      // Rule 6: 0 pts (+4, quad bogey net) → "Bund din øl"
-      const chugPlayers = [];
-      // Rule 7: 0 pts (+5 or worse) → "Bukserne nede"
-      const pantsPlayers = [];
-      players.forEach(([uid, p]) => {
-        const g = h.strokes?.[uid] || 0;
-        if (g > 0) {
-          const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
-          const nDiff = net(g, ph(d, uid), h.strokeIndex) - h.par;
-          if (pts === 4) birdiePlayers.push(p.name);
-          if (pts === 3) shotPlayers.push(p.name);
-          if (pts === 1) sipPlayers.push(p.name);
-          if (pts === 0 && nDiff >= 5) pantsPlayers.push(p.name);
-          else if (pts === 0 && nDiff === 4) chugPlayers.push(p.name);
-          else if (pts === 0 && nDiff === 3) zeroPlayers.push(p.name);
-        }
-      });
-      if (birdiePlayers.length > 0) {
-        showShotPopup(birdiePlayers, currentHole, 'birdie');
-      } else if (shotPlayers.length > 0) {
-        showShotPopup(shotPlayers, currentHole, 'shot');
-      } else if (sipPlayers.length > 0) {
-        showShotPopup(sipPlayers, currentHole, 'sip');
-      } else if (pantsPlayers.length > 0) {
-        showShotPopup(pantsPlayers, currentHole, 'pants');
-      } else if (chugPlayers.length > 0) {
-        showShotPopup(chugPlayers, currentHole, 'chug');
-      } else if (zeroPlayers.length > 0) {
-        showShotPopup(zeroPlayers, currentHole, 'zero');
-      }
-    }
-  }
-
   if (currentHole < 18) { currentHole++; loadHole(currentHole); }
   else await update(gameRef, { status: 'complete' });
 });
@@ -667,6 +625,53 @@ function short(n) { if (!n) return "Player"; const p=n.trim().split(" "); return
 // ═══════════════════════════════════════════════════════
 //  GOLFKONGERNE — SHOT POPUP
 // ═══════════════════════════════════════════════════════
+function checkGolfkongerneRules(d, h, holeNum) {
+  const players = getPlayers(d);
+
+  const acePlayers = [];
+  players.forEach(([uid, p]) => {
+    const g = h.strokes?.[uid] || 0;
+    if (g === 1) acePlayers.push(p.name);
+  });
+  if (acePlayers.length > 0) {
+    showShotPopup(acePlayers, holeNum, 'ace');
+  } else {
+    const birdiePlayers = [];
+    const shotPlayers = [];
+    const sipPlayers = [];
+    const zeroPlayers = [];
+    const chugPlayers = [];
+    const pantsPlayers = [];
+    players.forEach(([uid, p]) => {
+      const g = h.strokes?.[uid] || 0;
+      if (g > 0) {
+        const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
+        const nDiff = net(g, ph(d, uid), h.strokeIndex) - h.par;
+        if (pts === 4) birdiePlayers.push(p.name);
+        if (pts === 3) shotPlayers.push(p.name);
+        if (pts === 1) sipPlayers.push(p.name);
+        if (pts === 0 && nDiff >= 5) pantsPlayers.push(p.name);
+        else if (pts === 0 && nDiff === 4) chugPlayers.push(p.name);
+        else if (pts === 0 && nDiff === 3) zeroPlayers.push(p.name);
+      }
+    });
+
+    if (birdiePlayers.length > 0) {
+      showShotPopup(birdiePlayers, holeNum, 'birdie');
+    } else if (shotPlayers.length > 0) {
+      showShotPopup(shotPlayers, holeNum, 'shot');
+    } else if (sipPlayers.length > 0) {
+      showShotPopup(sipPlayers, holeNum, 'sip');
+    } else if (pantsPlayers.length > 0) {
+      showShotPopup(pantsPlayers, holeNum, 'pants');
+    } else if (chugPlayers.length > 0) {
+      showShotPopup(chugPlayers, holeNum, 'chug');
+    } else if (zeroPlayers.length > 0) {
+      showShotPopup(zeroPlayers, holeNum, 'zero');
+    }
+  }
+}
+
 function showShotPopup(playerNames, holeNum, type) {
   const names = playerNames.length === 1
     ? playerNames[0]

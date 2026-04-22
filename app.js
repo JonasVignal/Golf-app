@@ -57,6 +57,17 @@ const COURSES = {
       t53: { label:"🔵 53", length:5380, rating:69.7, slope:123 },
       t48: { label:"🔴 48", length:4956, rating:67.4, slope:118 }
     }
+  },
+  ormehoj: {
+    name: "Ormehøj GK (18 holes)", location: "Denmark", par: 72,
+    pars: [4,4,3,5,4,3,4,4,5, 4,4,3,5,4,3,4,4,5],
+    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    tees: {
+      t58: { label:"⚫ 58", length:5688, rating:70.3, slope:129 },
+      t55: { label:"🟡 55", length:5504, rating:69.4, slope:127 },
+      t53: { label:"🔵 53", length:5184, rating:67.7, slope:123 },
+      t48: { label:"🔴 48", length:4732, rating:65.3, slope:117 }
+    }
   }
 };
 const DEF_PARS = [4,4,3,5,4,3,4,4,5, 4,3,4,5,4,3,4,4,5];

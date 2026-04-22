@@ -483,6 +483,8 @@ $('saveHoleBtn').addEventListener('click', async () => {
       const shotPlayers = [];
       // Rule 4: 1 pt → "Drik en tår"
       const sipPlayers = [];
+      // Rule 5: 0 pts → "Dame Tee"
+      const zeroPlayers = [];
       players.forEach(([uid, p]) => {
         const g = h.strokes?.[uid] || 0;
         if (g > 0) {
@@ -490,6 +492,7 @@ $('saveHoleBtn').addEventListener('click', async () => {
           if (pts === 4) birdiePlayers.push(p.name);
           if (pts === 3) shotPlayers.push(p.name);
           if (pts === 1) sipPlayers.push(p.name);
+          if (pts === 0) zeroPlayers.push(p.name);
         }
       });
       if (birdiePlayers.length > 0) {
@@ -498,6 +501,8 @@ $('saveHoleBtn').addEventListener('click', async () => {
         showShotPopup(shotPlayers, currentHole, 'shot');
       } else if (sipPlayers.length > 0) {
         showShotPopup(sipPlayers, currentHole, 'sip');
+      } else if (zeroPlayers.length > 0) {
+        showShotPopup(zeroPlayers, currentHole, 'zero');
       }
     }
   }
@@ -648,6 +653,12 @@ function showShotPopup(playerNames, holeNum, type) {
     $("shotPlayerName").textContent = `👑 ${names}`;
     $("shotDetail").textContent = `Scorede 3 point på hul ${holeNum} — par netto!`;
     $("shotDismiss").textContent = "Skål! 🥃";
+  } else if (type === "zero") {
+    $("shotPopup").querySelector(".shot-emoji").textContent = "💩";
+    $("shotPopup").querySelector(".shot-title").textContent = "Måske Dame Tee næste gang!";
+    $("shotPlayerName").textContent = `🙈 ${names}`;
+    $("shotDetail").textContent = `0 point på hul ${holeNum} — bund din øl!`;
+    $("shotDismiss").textContent = "Bund! 🍺";
   }
 
   $("shotPopup").classList.add("active");

@@ -59,6 +59,16 @@ const $ = id => document.getElementById(id);
 const screens = { login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") };
 function show(name) { Object.values(screens).forEach(s => s.classList.remove("active")); screens[name].classList.add("active"); }
 
+// Global error handlers for mobile debugging
+window.addEventListener('error', (e) => {
+  const errEl = $("loginError");
+  if (errEl) errEl.textContent = `JS Error: ${e.message} at ${e.filename}:${e.lineno}`;
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const errEl = $("loginError");
+  if (errEl) errEl.textContent = `Promise Error: ${e.reason}`;
+});
+
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════

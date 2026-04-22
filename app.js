@@ -458,10 +458,30 @@ $("holeMeters").addEventListener("change", async () => {
 // ═══════════════════════════════════════════════════════
 //  SAVE HOLE / NAV
 // ═══════════════════════════════════════════════════════
-$("saveHoleBtn").addEventListener("click", async () => {
-  await update(ref(db, `games/${gameId}/holes/${currentHole-1}`), { saved: true });
+$('saveHoleBtn').addEventListener('click', async () => {
+  const d = gameData;
+  const h = d.holes[currentHole - 1];
+
+  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { saved: true });
+
+  // Golfkongerne: check if any player scored exactly 3 points on this hole
+  if (d.scoringSystem === 'golfkongerne') {
+    const players = getPlayers(d);
+    const shotPlayers = [];
+    players.forEach(([uid, p]) => {
+      const g = h.strokes?.[uid] || 0;
+      if (g > 0) {
+        const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
+        if (pts === 3) shotPlayers.push(p.name);
+      }
+    });
+    if (shotPlayers.length > 0) {
+      showShotPopup(shotPlayers, currentHole);
+    }
+  }
+
   if (currentHole < 18) { currentHole++; loadHole(currentHole); }
-  else await update(gameRef, { status: "complete" });
+  else await update(gameRef, { status: 'complete' });
 });
 
 $("prevHole").addEventListener("click", () => { if (currentHole > 1) loadHole(currentHole-1); });
@@ -573,6 +593,27 @@ $("playAgainBtn").addEventListener("click", () => { cleanup(); currentHole = 1; 
 // ═══════════════════════════════════════════════════════
 function genCode() { const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(""); }
 function short(n) { if (!n) return "Player"; const p=n.trim().split(" "); return p.length>=2 ? p[0]+" "+p[1][0]+"." : p[0]; }
+
+// ═══════════════════════════════════════════════════════
+//  GOLFKONGERNE — SHOT POPUP
+// ═══════════════════════════════════════════════════════
+function showShotPopup(playerNames, holeNum) {
+  const names = playerNames.length === 1
+    ? playerNames[0]
+    : playerNames.slice(0, -1).join(", ") + " og " + playerNames[playerNames.length - 1];
+  $("shotPlayerName").textContent = `👑 ${names}`;
+  $("shotDetail").textContent = `Scorede 3 point på hul ${holeNum} — par netto!`;
+  $("shotPopup").classList.add("active");
+}
+
+$("shotDismiss").addEventListener("click", () => {
+  $("shotPopup").classList.remove("active");
+});
+
+// Close popup on overlay click too
+$("shotPopup").addEventListener("click", (e) => {
+  if (e.target === $("shotPopup")) $("shotPopup").classList.remove("active");
+});
 
 // Init
 updateCourseUI();

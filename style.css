@@ -194,6 +194,32 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--g900);color:var(
 .stat-row:last-child{border-bottom:none}.stat-row span{color:var(--tx-m)}.stat-row strong{color:var(--tx);font-weight:700}
 .stat-row.highlight strong{color:var(--gold);font-size:1rem}
 
+/* ════════ GOLFKONGERNE SHOT POPUP ════════ */
+.shot-popup {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 24px;
+}
+.shot-popup.active { display: flex; animation: popIn .3s ease; }
+@keyframes popIn { from { opacity: 0; } to { opacity: 1; } }
+.shot-popup-card {
+  background: linear-gradient(145deg, #1a3525, #0f2a1c);
+  border: 2px solid var(--gold); border-radius: var(--rl);
+  padding: 40px 32px; text-align: center; max-width: 380px; width: 100%;
+  box-shadow: 0 0 60px rgba(240,192,64,.25), 0 20px 60px rgba(0,0,0,.5);
+  animation: cardBounce .5s ease;
+}
+@keyframes cardBounce { 0%{transform:scale(.7);opacity:0} 60%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+.shot-emoji { font-size: 72px; margin-bottom: 16px; animation: shake .5s ease .3s both; }
+@keyframes shake { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-12deg)} 50%{transform:rotate(12deg)} 75%{transform:rotate(-6deg)} }
+.shot-title {
+  font-size: 1.6rem; font-weight: 800; margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--gold-lt), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.shot-player { font-size: 1rem; font-weight: 700; color: var(--tx); margin-bottom: 6px; }
+.shot-detail { font-size: .85rem; color: var(--tx-m); margin-bottom: 24px; }
+
 @media(max-width:640px){
   .center-card{padding:24px 18px}
   .leaderboard-bar{flex-wrap:nowrap}

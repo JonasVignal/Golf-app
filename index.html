@@ -85,6 +85,7 @@
           <label class="field-label">Scoring System</label>
           <select id="scoringSystem" class="field-input">
             <option value="stableford">Stableford</option>
+            <option value="golfkongerne">👑 Golfkongerne</option>
             <option value="stroke">Stroke Play (Net)</option>
             <option value="both">Both</option>
           </select>
@@ -210,6 +211,17 @@
         <!-- filled by JS -->
       </div>
       <button class="primary-btn" id="playAgainBtn">Play Again 🏌️</button>
+    </div>
+  </div>
+
+  <!-- ══════════ SHOT POPUP (Golfkongerne) ══════════ -->
+  <div id="shotPopup" class="shot-popup">
+    <div class="shot-popup-card">
+      <div class="shot-emoji">🍻</div>
+      <h2 class="shot-title">Giv et shot til en makker!</h2>
+      <p class="shot-player" id="shotPlayerName"></p>
+      <p class="shot-detail" id="shotDetail"></p>
+      <button class="primary-btn" id="shotDismiss">Skål! 🥃</button>
     </div>
   </div>
 

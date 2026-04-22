@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, signInAnonymously, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, set, get, update, onValue, off, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -102,6 +102,20 @@ $("signInBtn").addEventListener("click", () => {
     };
     $("loginError").textContent = msg[e.code] || `Error: ${e.code}`;
   });
+});
+
+$("guestBtn").addEventListener("click", async () => {
+  try {
+    $("loginError").textContent = "Creating guest session...";
+    const { user } = await signInAnonymously(auth);
+    if (!user.displayName) {
+      let name = prompt("Enter your name:");
+      if (!name || !name.trim()) name = "Guest " + Math.floor(Math.random() * 1000);
+      await updateProfile(user, { displayName: name.trim() });
+    }
+  } catch (e) {
+    $("loginError").textContent = `Guest Error: ${e.message}`;
+  }
 });
 
 $("lobbySignOut").addEventListener("click", () => signOut(auth));

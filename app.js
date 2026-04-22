@@ -477,19 +477,24 @@ $('saveHoleBtn').addEventListener('click', async () => {
     if (acePlayers.length > 0) {
       showShotPopup(acePlayers, currentHole, 'ace');
     } else {
-      // Rule 2: Exactly 3 Stableford points → "Giv et shot til en makker"
+      // Rule 2: 4 pts → "Giv en makker et om slag"
+      const birdiePlayers = [];
+      // Rule 3: 3 pts → "Giv et shot til en makker"
       const shotPlayers = [];
-      // Rule 3: Exactly 1 Stableford point → "Drik en tår"
+      // Rule 4: 1 pt → "Drik en tår"
       const sipPlayers = [];
       players.forEach(([uid, p]) => {
         const g = h.strokes?.[uid] || 0;
         if (g > 0) {
           const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
+          if (pts === 4) birdiePlayers.push(p.name);
           if (pts === 3) shotPlayers.push(p.name);
           if (pts === 1) sipPlayers.push(p.name);
         }
       });
-      if (shotPlayers.length > 0) {
+      if (birdiePlayers.length > 0) {
+        showShotPopup(birdiePlayers, currentHole, 'birdie');
+      } else if (shotPlayers.length > 0) {
         showShotPopup(shotPlayers, currentHole, 'shot');
       } else if (sipPlayers.length > 0) {
         showShotPopup(sipPlayers, currentHole, 'sip');
@@ -625,6 +630,12 @@ function showShotPopup(playerNames, holeNum, type) {
     $("shotPlayerName").textContent = `🎯 ${names}`;
     $("shotDetail").textContent = `Hole-in-one på hul ${holeNum}! Det koster en runde!`;
     $("shotDismiss").textContent = "Skål! 🍺";
+  } else if (type === "birdie") {
+    $("shotPopup").querySelector(".shot-emoji").textContent = "🦅";
+    $("shotPopup").querySelector(".shot-title").textContent = "Giv en makker et omslag efter eget ønske!";
+    $("shotPlayerName").textContent = `🔥 ${names}`;
+    $("shotDetail").textContent = `4 point på hul ${holeNum} — birdie netto!`;
+    $("shotDismiss").textContent = "Fedt! 🍻";
   } else if (type === "sip") {
     $("shotPopup").querySelector(".shot-emoji").textContent = "😬";
     $("shotPopup").querySelector(".shot-title").textContent = "Uhh, 1 Point. Drik en tår!";

@@ -625,51 +625,51 @@ function short(n) { if (!n) return "Player"; const p=n.trim().split(" "); return
 // ═══════════════════════════════════════════════════════
 //  GOLFKONGERNE — SHOT POPUP
 // ═══════════════════════════════════════════════════════
+let popupQueue = [];
+
+function processPopupQueue() {
+  if ($("shotPopup").classList.contains("active")) return;
+  if (popupQueue.length === 0) return;
+  
+  const next = popupQueue.shift();
+  showShotPopup(next.names, next.holeNum, next.type);
+}
+
 function checkGolfkongerneRules(d, h, holeNum) {
   const players = getPlayers(d);
 
   const acePlayers = [];
+  const birdiePlayers = [];
+  const shotPlayers = [];
+  const sipPlayers = [];
+  const zeroPlayers = [];
+  const chugPlayers = [];
+  const pantsPlayers = [];
+
   players.forEach(([uid, p]) => {
     const g = h.strokes?.[uid] || 0;
     if (g === 1) acePlayers.push(p.name);
-  });
-  if (acePlayers.length > 0) {
-    showShotPopup(acePlayers, holeNum, 'ace');
-  } else {
-    const birdiePlayers = [];
-    const shotPlayers = [];
-    const sipPlayers = [];
-    const zeroPlayers = [];
-    const chugPlayers = [];
-    const pantsPlayers = [];
-    players.forEach(([uid, p]) => {
-      const g = h.strokes?.[uid] || 0;
-      if (g > 0) {
-        const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
-        const nDiff = net(g, ph(d, uid), h.strokeIndex) - h.par;
-        if (pts === 4) birdiePlayers.push(p.name);
-        if (pts === 3) shotPlayers.push(p.name);
-        if (pts === 1) sipPlayers.push(p.name);
-        if (pts === 0 && nDiff >= 5) pantsPlayers.push(p.name);
-        else if (pts === 0 && nDiff === 4) chugPlayers.push(p.name);
-        else if (pts === 0 && nDiff === 3) zeroPlayers.push(p.name);
-      }
-    });
-
-    if (birdiePlayers.length > 0) {
-      showShotPopup(birdiePlayers, holeNum, 'birdie');
-    } else if (shotPlayers.length > 0) {
-      showShotPopup(shotPlayers, holeNum, 'shot');
-    } else if (sipPlayers.length > 0) {
-      showShotPopup(sipPlayers, holeNum, 'sip');
-    } else if (pantsPlayers.length > 0) {
-      showShotPopup(pantsPlayers, holeNum, 'pants');
-    } else if (chugPlayers.length > 0) {
-      showShotPopup(chugPlayers, holeNum, 'chug');
-    } else if (zeroPlayers.length > 0) {
-      showShotPopup(zeroPlayers, holeNum, 'zero');
+    else if (g > 1) {
+      const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
+      const nDiff = net(g, ph(d, uid), h.strokeIndex) - h.par;
+      if (pts === 4) birdiePlayers.push(p.name);
+      else if (pts === 3) shotPlayers.push(p.name);
+      else if (pts === 1) sipPlayers.push(p.name);
+      else if (pts === 0 && nDiff >= 5) pantsPlayers.push(p.name);
+      else if (pts === 0 && nDiff === 4) chugPlayers.push(p.name);
+      else if (pts === 0 && nDiff === 3) zeroPlayers.push(p.name);
     }
-  }
+  });
+
+  if (acePlayers.length > 0)    popupQueue.push({ names: acePlayers,    holeNum, type: 'ace' });
+  if (birdiePlayers.length > 0) popupQueue.push({ names: birdiePlayers, holeNum, type: 'birdie' });
+  if (shotPlayers.length > 0)   popupQueue.push({ names: shotPlayers,   holeNum, type: 'shot' });
+  if (sipPlayers.length > 0)    popupQueue.push({ names: sipPlayers,    holeNum, type: 'sip' });
+  if (pantsPlayers.length > 0)  popupQueue.push({ names: pantsPlayers,  holeNum, type: 'pants' });
+  if (chugPlayers.length > 0)   popupQueue.push({ names: chugPlayers,   holeNum, type: 'chug' });
+  if (zeroPlayers.length > 0)   popupQueue.push({ names: zeroPlayers,   holeNum, type: 'zero' });
+
+  processPopupQueue();
 }
 
 function showShotPopup(playerNames, holeNum, type) {
@@ -727,11 +727,15 @@ function showShotPopup(playerNames, holeNum, type) {
 
 $("shotDismiss").addEventListener("click", () => {
   $("shotPopup").classList.remove("active");
+  setTimeout(processPopupQueue, 400);
 });
 
 // Close popup on overlay click too
 $("shotPopup").addEventListener("click", (e) => {
-  if (e.target === $("shotPopup")) $("shotPopup").classList.remove("active");
+  if (e.target === $("shotPopup")) {
+    $("shotPopup").classList.remove("active");
+    setTimeout(processPopupQueue, 400);
+  }
 });
 
 // Init

@@ -139,6 +139,10 @@ function cleanup() {
 function showLobby(user) {
   $("lobbyPhoto").src = user.photoURL || "";
   $("lobbyName").textContent = user.displayName || user.email;
+  
+  const savedHcp = localStorage.getItem("gm_hcp");
+  if (savedHcp) $("myHCP").value = savedHcp;
+
   updateCourseUI();
   show("lobby");
 }
@@ -182,7 +186,10 @@ document.querySelectorAll(".tee-btn").forEach(btn => {
 //  CREATE GAME
 // ═══════════════════════════════════════════════════════
 $("createGameBtn").addEventListener("click", async () => {
-  const hcpIdx = parseFloat($("myHCP").value) || 0;
+  const hcpVal = $("myHCP").value.trim();
+  const hcpIdx = parseFloat(hcpVal) || 0;
+  if (hcpVal) localStorage.setItem("gm_hcp", hcpVal);
+
   const scoring = $("scoringSystem").value;
   const ck = $("courseSelect").value;
 
@@ -236,7 +243,10 @@ $("joinGameBtn").addEventListener("click", async () => {
   if (pCount >= MAX_PLAYERS) { $("joinError").textContent = "Game is full (7 players max)."; return; }
   if (d.players && d.players[myUid]) { $("joinError").textContent = "You're already in this game."; return; }
 
-  const hcpIdx = parseFloat($("myHCP").value) || 0;
+  const hcpVal = $("myHCP").value.trim();
+  const hcpIdx = parseFloat(hcpVal) || 0;
+  if (hcpVal) localStorage.setItem("gm_hcp", hcpVal);
+
   const ti = d.teeInfo;
   const ph = ti ? calcPH(hcpIdx, ti.slope, ti.rating, ti.par) : Math.round(hcpIdx);
 

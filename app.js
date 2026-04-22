@@ -657,8 +657,8 @@ function showShotPopup(playerNames, holeNum, type) {
     $("shotPopup").querySelector(".shot-emoji").textContent = "💩";
     $("shotPopup").querySelector(".shot-title").textContent = "Måske Dame Tee næste gang!";
     $("shotPlayerName").textContent = `🙈 ${names}`;
-    $("shotDetail").textContent = `0 point på hul ${holeNum} — bund din øl!`;
-    $("shotDismiss").textContent = "Bund! 🍺";
+    $("shotDetail").textContent = `0 point på hul ${holeNum} — tag et shot!`;
+    $("shotDismiss").textContent = "Skål! 🥃";
   }
 
   $("shotPopup").classList.add("active");

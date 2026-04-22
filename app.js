@@ -464,19 +464,31 @@ $('saveHoleBtn').addEventListener('click', async () => {
 
   await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { saved: true });
 
-  // Golfkongerne: check if any player scored exactly 3 points on this hole
+  // Golfkongerne: check for special rules
   if (d.scoringSystem === 'golfkongerne') {
     const players = getPlayers(d);
-    const shotPlayers = [];
+
+    // Rule 1: Hole-in-one (1 stroke) → "Giv en runde i klubhuset"
+    const acePlayers = [];
     players.forEach(([uid, p]) => {
       const g = h.strokes?.[uid] || 0;
-      if (g > 0) {
-        const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
-        if (pts === 3) shotPlayers.push(p.name);
-      }
+      if (g === 1) acePlayers.push(p.name);
     });
-    if (shotPlayers.length > 0) {
-      showShotPopup(shotPlayers, currentHole);
+    if (acePlayers.length > 0) {
+      showShotPopup(acePlayers, currentHole, 'ace');
+    } else {
+      // Rule 2: Exactly 3 Stableford points → "Giv et shot til en makker"
+      const shotPlayers = [];
+      players.forEach(([uid, p]) => {
+        const g = h.strokes?.[uid] || 0;
+        if (g > 0) {
+          const pts = stab(g, h.par, ph(d, uid), h.strokeIndex);
+          if (pts === 3) shotPlayers.push(p.name);
+        }
+      });
+      if (shotPlayers.length > 0) {
+        showShotPopup(shotPlayers, currentHole, 'shot');
+      }
     }
   }
 
@@ -597,12 +609,27 @@ function short(n) { if (!n) return "Player"; const p=n.trim().split(" "); return
 // ═══════════════════════════════════════════════════════
 //  GOLFKONGERNE — SHOT POPUP
 // ═══════════════════════════════════════════════════════
-function showShotPopup(playerNames, holeNum) {
+function showShotPopup(playerNames, holeNum, type) {
   const names = playerNames.length === 1
     ? playerNames[0]
     : playerNames.slice(0, -1).join(", ") + " og " + playerNames[playerNames.length - 1];
-  $("shotPlayerName").textContent = `👑 ${names}`;
-  $("shotDetail").textContent = `Scorede 3 point på hul ${holeNum} — par netto!`;
+
+  if (type === "ace") {
+    // Hole-in-one → "Giv en runde i klubhuset"
+    $("shotPopup").querySelector(".shot-emoji").textContent = "🏌️‍♂️🕳️";
+    $("shotPopup").querySelector(".shot-title").textContent = "Giv en runde i klubhuset!";
+    $("shotPlayerName").textContent = `🎯 ${names}`;
+    $("shotDetail").textContent = `Hole-in-one på hul ${holeNum}! Det koster en runde!`;
+    $("shotDismiss").textContent = "Skål! 🍺";
+  } else {
+    // 3 Stableford points → "Giv et shot til en makker"
+    $("shotPopup").querySelector(".shot-emoji").textContent = "🍻";
+    $("shotPopup").querySelector(".shot-title").textContent = "Giv et shot til en makker!";
+    $("shotPlayerName").textContent = `👑 ${names}`;
+    $("shotDetail").textContent = `Scorede 3 point på hul ${holeNum} — par netto!`;
+    $("shotDismiss").textContent = "Skål! 🥃";
+  }
+
   $("shotPopup").classList.add("active");
 }
 

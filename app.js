@@ -207,9 +207,14 @@ function updateCourseUI() {
   $("customCourseGroup").classList.toggle("hidden", known);
   $("teeGroup").classList.toggle("hidden", !known);
   $("courseInfoCard").style.display = known ? "grid" : "none";
-  
   if (known) {
     const c = COURSES[k];
+    
+    // Safety check: if the browser initialized selectedTee to something invalid for this course
+    if (!c.tees[selectedTee]) {
+      selectedTee = Object.keys(c.tees)[0];
+    }
+    
     const selector = $("teeSelector");
     selector.innerHTML = "";
     Object.entries(c.tees).forEach(([tKey, t]) => {

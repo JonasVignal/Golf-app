@@ -326,20 +326,6 @@ function handleUpdate(d) {
     return;
   }
   if (d.status === "active") {
-    // ---- Golfkongerne popup sync across all devices ----
-    if (d.scoringSystem === "golfkongerne" && d.holes) {
-      if (!seenSavedHoles) {
-        seenSavedHoles = Array.from({length: 18}, (_, i) => !!(d.holes[i]?.saved));
-      } else {
-        for (let i = 0; i < 18; i++) {
-          if (d.holes[i]?.saved && !seenSavedHoles[i]) {
-            seenSavedHoles[i] = true;
-            checkGolfkongerneRules(d, d.holes[i], i + 1);
-          }
-        }
-      }
-    }
-    // ----------------------------------------------------
     if (!screens.scorecard.classList.contains("active") && !screens.results.classList.contains("active")) initScorecard(d);
     else refreshScorecard(d);
     return;
@@ -507,7 +493,16 @@ $("holeMeters").addEventListener("change", async () => {
 //  SAVE HOLE / NAV
 // ═══════════════════════════════════════════════════════
 $('saveHoleBtn').addEventListener('click', async () => {
+  const d = gameData;
+  const h = d.holes[currentHole - 1];
+
   await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { saved: true });
+
+  // Golfkongerne: check for special rules locally when the player clicks save
+  if (d.scoringSystem === 'golfkongerne') {
+    checkGolfkongerneRules(d, h, currentHole);
+  }
+
   if (currentHole < 18) { currentHole++; loadHole(currentHole); }
   else await update(gameRef, { status: 'complete' });
 });

@@ -4,8 +4,10 @@
 // ═══════════════════════════════════════════════════════
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+  getRedirectResult, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, set, get, update, onValue, off, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
@@ -84,20 +86,43 @@ function showScreen(name) {
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+// On mobile, check for redirect result when page loads back
+getRedirectResult(auth).catch(e => {
+  if (e.code && e.code !== "auth/popup-closed-by-user") {
+    console.error("Redirect auth error:", e.code, e.message);
+    $("loginError").textContent = `Auth error: ${e.code}`;
+  }
+});
+
 $("signInBtn").addEventListener("click", async () => {
-  try {
-    $("loginError").textContent = "";
-    await signInWithPopup(auth, new GoogleAuthProvider());
-  } catch (e) {
-    console.error("Auth error:", e.code, e.message);
-    if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") return;
-    const hints = {
-      "auth/unauthorized-domain":    "Domain not authorized in Firebase. Add it in Authentication → Settings → Authorized domains.",
-      "auth/operation-not-allowed":  "Google sign-in not enabled. Enable it in Firebase → Authentication → Sign-in method.",
-      "auth/popup-blocked":          "Popup blocked. Please allow popups for this site.",
-      "auth/network-request-failed": "Network error. Check your internet.",
-    };
-    $("loginError").textContent = hints[e.code] || `Error: ${e.code}`;
+  $("loginError").textContent = "";
+  const provider = new GoogleAuthProvider();
+
+  if (isMobile) {
+    // Redirect flow — works on all mobile browsers
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (e) {
+      console.error("Auth error:", e.code, e.message);
+      $("loginError").textContent = `Error: ${e.code}`;
+    }
+  } else {
+    // Popup flow — works on desktop
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      console.error("Auth error:", e.code, e.message);
+      if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") return;
+      const hints = {
+        "auth/unauthorized-domain": "Domain not authorized. Add it in Firebase → Auth → Settings → Authorized domains.",
+        "auth/operation-not-allowed": "Google sign-in not enabled in Firebase.",
+        "auth/popup-blocked": "Popup blocked. Allow popups for this site.",
+        "auth/network-request-failed": "Network error.",
+      };
+      $("loginError").textContent = hints[e.code] || `Error: ${e.code}`;
+    }
   }
 });
 

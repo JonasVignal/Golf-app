@@ -73,36 +73,26 @@ window.addEventListener('unhandledrejection', (e) => {
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-// Explicitly handle redirect results so Firebase parses the login attempt correctly
+// Explicitly handle redirect results just in case there's old state
 getRedirectResult(auth).then((result) => {
   if (result) $("loginError").textContent = "Login completed!";
 }).catch((e) => {
-  $("loginError").textContent = `Login Error: ${e.message || e.code}`;
+  console.error(e);
 });
 
-$("signInBtn").addEventListener("click", async () => {
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+$("signInBtn").addEventListener("click", () => {
   $("loginError").textContent = "Opening Google...";
-  const provider = new GoogleAuthProvider();
-  try {
-    if (isMobile) {
-      // Mobile Safari/Chrome blocks popups heavily; redirect is much more reliable
-      await signInWithRedirect(auth, provider);
-    } else {
-      await signInWithPopup(auth, provider);
-    }
-  } catch (e) {
+  // popup MUST be called instantly without async/await to avoid Safari popup blocking
+  signInWithPopup(auth, googleProvider).catch((e) => {
     if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") {
       $("loginError").textContent = "";
       return;
     }
-    // Fallback if popup is blocked on desktop
     if (e.code === "auth/popup-blocked") {
-      $("loginError").textContent = "Popup blocked. Try disabling popup blockers.";
-      await signInWithRedirect(auth, provider).catch(err => {
-        $("loginError").textContent = err.code;
-      });
+      $("loginError").textContent = "Popup blocked! Try opening the app in Safari native instead of Facebook/Instagram browser.";
       return;
     }
     const msg = {
@@ -111,7 +101,7 @@ $("signInBtn").addEventListener("click", async () => {
       "auth/network-request-failed": "Network error — check your connection.",
     };
     $("loginError").textContent = msg[e.code] || `Error: ${e.code}`;
-  }
+  });
 });
 
 $("lobbySignOut").addEventListener("click", () => signOut(auth));

@@ -690,12 +690,6 @@ function showShotPopup(playerNames, holeNum, type) {
     $("shotPlayerName").textContent = `😅 ${names}`;
     $("shotDetail").textContent = `Kun 1 point på hul ${holeNum} — det koster en tår!`;
     $("shotDismiss").textContent = "Bund! 🍺";
-  } else {
-    $("shotPopup").querySelector(".shot-emoji").textContent = "🍻";
-    $("shotPopup").querySelector(".shot-title").textContent = "Giv et shot til en makker!";
-    $("shotPlayerName").textContent = `👑 ${names}`;
-    $("shotDetail").textContent = `Scorede 3 point på hul ${holeNum} — par netto!`;
-    $("shotDismiss").textContent = "Skål! 🥃";
   } else if (type === "zero") {
     $("shotPopup").querySelector(".shot-emoji").textContent = "💩";
     $("shotPopup").querySelector(".shot-title").textContent = "Måske Dame Tee næste gang!";
@@ -714,6 +708,13 @@ function showShotPopup(playerNames, holeNum, type) {
     $("shotPlayerName").textContent = `👖 ${names}`;
     $("shotDetail").textContent = `0 point på hul ${holeNum} og helt ude — drop bukserne!`;
     $("shotDismiss").textContent = "Oh no! 😱";
+  } else {
+    // Default to "shot" (3 points)
+    $("shotPopup").querySelector(".shot-emoji").textContent = "🍻";
+    $("shotPopup").querySelector(".shot-title").textContent = "Giv et shot til en makker!";
+    $("shotPlayerName").textContent = `👑 ${names}`;
+    $("shotDetail").textContent = `Scorede 3 point på hul ${holeNum} — par netto!`;
+    $("shotDismiss").textContent = "Skål! 🥃";
   }
 
   $("shotPopup").classList.add("active");

@@ -62,9 +62,16 @@ $("signInBtn").addEventListener("click", async () => {
     $("loginError").textContent = "";
     await signInWithPopup(auth, new GoogleAuthProvider());
   } catch (e) {
-    if (e.code !== "auth/popup-closed-by-user") {
-      $("loginError").textContent = "Sign-in failed. Please try again.";
-    }
+    console.error("Auth error:", e.code, e.message);
+    if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") return;
+
+    const hints = {
+      "auth/unauthorized-domain":    "This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.",
+      "auth/operation-not-allowed":  "Google sign-in is not enabled. Go to Firebase → Authentication → Sign-in method → Enable Google.",
+      "auth/popup-blocked":          "Popup was blocked by your browser. Please allow popups for this site.",
+      "auth/network-request-failed": "Network error. Check your internet connection.",
+    };
+    $("loginError").textContent = hints[e.code] || `Error: ${e.code}`;
   }
 });
 

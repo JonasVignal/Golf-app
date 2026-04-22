@@ -483,10 +483,12 @@ $('saveHoleBtn').addEventListener('click', async () => {
       const shotPlayers = [];
       // Rule 4: 1 pt → "Drik en tår"
       const sipPlayers = [];
-      // Rule 5: 0 pts (triple bogey net) → "Dame Tee"
+      // Rule 5: 0 pts (triple bogey net, +3) → "Dame Tee"
       const zeroPlayers = [];
-      // Rule 6: 0 pts + even worse (quad bogey+ net) → "Bund din øl"
+      // Rule 6: 0 pts (+4, quad bogey net) → "Bund din øl"
       const chugPlayers = [];
+      // Rule 7: 0 pts (+5 or worse) → "Bukserne nede"
+      const pantsPlayers = [];
       players.forEach(([uid, p]) => {
         const g = h.strokes?.[uid] || 0;
         if (g > 0) {
@@ -495,8 +497,9 @@ $('saveHoleBtn').addEventListener('click', async () => {
           if (pts === 4) birdiePlayers.push(p.name);
           if (pts === 3) shotPlayers.push(p.name);
           if (pts === 1) sipPlayers.push(p.name);
-          if (pts === 0 && nDiff >= 4) chugPlayers.push(p.name);
-          else if (pts === 0 && nDiff >= 3) zeroPlayers.push(p.name);
+          if (pts === 0 && nDiff >= 5) pantsPlayers.push(p.name);
+          else if (pts === 0 && nDiff === 4) chugPlayers.push(p.name);
+          else if (pts === 0 && nDiff === 3) zeroPlayers.push(p.name);
         }
       });
       if (birdiePlayers.length > 0) {
@@ -505,6 +508,8 @@ $('saveHoleBtn').addEventListener('click', async () => {
         showShotPopup(shotPlayers, currentHole, 'shot');
       } else if (sipPlayers.length > 0) {
         showShotPopup(sipPlayers, currentHole, 'sip');
+      } else if (pantsPlayers.length > 0) {
+        showShotPopup(pantsPlayers, currentHole, 'pants');
       } else if (chugPlayers.length > 0) {
         showShotPopup(chugPlayers, currentHole, 'chug');
       } else if (zeroPlayers.length > 0) {
@@ -671,6 +676,12 @@ function showShotPopup(playerNames, holeNum, type) {
     $("shotPlayerName").textContent = `😵 ${names}`;
     $("shotDetail").textContent = `0 point på hul ${holeNum} og en ekstra slag over — BUND!`;
     $("shotDismiss").textContent = "BUND! 🍺";
+  } else if (type === "pants") {
+    $("shotPopup").querySelector(".shot-emoji").textContent = "🧑‍🦲";
+    $("shotPopup").querySelector(".shot-title").textContent = "Drive på næste hul med bukserne nede!";
+    $("shotPlayerName").textContent = `👖 ${names}`;
+    $("shotDetail").textContent = `0 point på hul ${holeNum} og helt ude — drop bukserne!`;
+    $("shotDismiss").textContent = "Oh no! 😱";
   }
 
   $("shotPopup").classList.add("active");

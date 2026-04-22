@@ -35,6 +35,17 @@ const COURSES = {
       blue:   { label:"🔵 Blue",   length:5433, rating:67.9, slope:123 },
       red:    { label:"🔴 Red",    length:5145, rating:65.2, slope:117 },
     }
+  },
+  norreskov: {
+    name: "Nørreskov GK (18 holes)", location: "Denmark", par: 70,
+    pars: [4,4,4,4,4,4,4,4,3, 4,4,4,4,4,4,4,4,3],
+    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    tees: {
+      t58: { label:"⚫ 58", length:5710, rating:70.5, slope:124 },
+      t55: { label:"🟡 55", length:5300, rating:68.3, slope:119 },
+      t53: { label:"🔵 53", length:5250, rating:68.1, slope:119 },
+      t44: { label:"🔴 44", length:4644, rating:111, slope:111 }
+    }
   }
 };
 const DEF_PARS = [4,4,3,5,4,3,4,4,5, 4,3,4,5,4,3,4,4,5];
@@ -161,30 +172,46 @@ function showLobby(user) {
 });
 
 // Course / Tee UI
-$("courseSelect").addEventListener("change", updateCourseUI);
+$("courseSelect").addEventListener("change", () => {
+  const k = $("courseSelect").value;
+  if (k !== "custom" && COURSES[k]) {
+    selectedTee = Object.keys(COURSES[k].tees)[0];
+  }
+  updateCourseUI();
+});
+
 function updateCourseUI() {
   const k = $("courseSelect").value, known = k !== "custom";
   $("customCourseGroup").classList.toggle("hidden", known);
   $("teeGroup").classList.toggle("hidden", !known);
   $("courseInfoCard").style.display = known ? "grid" : "none";
-  if (known) refreshCI(k, selectedTee);
+  
+  if (known) {
+    const c = COURSES[k];
+    const selector = $("teeSelector");
+    selector.innerHTML = "";
+    Object.entries(c.tees).forEach(([tKey, t]) => {
+      const btn = document.createElement("button");
+      btn.className = "tee-btn" + (selectedTee === tKey ? " active" : "");
+      btn.textContent = t.label;
+      btn.onclick = () => {
+        selectedTee = tKey;
+        updateCourseUI();
+      };
+      selector.appendChild(btn);
+    });
+    refreshCI(k, selectedTee);
+  }
 }
 function refreshCI(ck, tee) {
   const c = COURSES[ck]; if (!c) return;
   const t = c.tees[tee];
+  if (!t) return;
   $("ciLength").textContent = t.length + " m";
   $("ciPar").textContent = c.par;
   $("ciRating").textContent = t.rating;
   $("ciSlope").textContent = t.slope;
 }
-document.querySelectorAll(".tee-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    selectedTee = btn.dataset.tee;
-    document.querySelectorAll(".tee-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    refreshCI($("courseSelect").value, selectedTee);
-  });
-});
 
 // ═══════════════════════════════════════════════════════
 //  CREATE GAME

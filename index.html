@@ -60,6 +60,7 @@
           <label class="field-label">Course</label>
           <select id="courseSelect" class="field-input">
             <option value="skyrup">⛳ Skyrup GK — Sweden</option>
+            <option value="norreskov">⛳ Nørreskov GK — Denmark</option>
             <option value="custom">✏️ Custom course...</option>
           </select>
         </div>
@@ -69,11 +70,8 @@
         </div>
         <div class="field-group" id="teeGroup">
           <label class="field-label">Tee</label>
-          <div class="tee-selector">
-            <button class="tee-btn active" data-tee="yellow">🟡 Yellow</button>
-            <button class="tee-btn" data-tee="white">⚪ White</button>
-            <button class="tee-btn" data-tee="blue">🔵 Blue</button>
-            <button class="tee-btn" data-tee="red">🔴 Red</button>
+          <div class="tee-selector" id="teeSelector">
+            <!-- Dynamically populated -->
           </div>
         </div>
         <div class="course-info-card" id="courseInfoCard">

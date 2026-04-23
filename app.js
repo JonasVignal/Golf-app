@@ -472,7 +472,7 @@ function loadHole(n, d) {
     if (isSkyrup && n === 1) {
       viewMapBtn.style.display = "inline-block";
       if (!seenMapHoles.has(1)) {
-        $("mapImage").src = "skyrup1.jpg";
+        $("mapImage").src = "Skyrup_1.png";
         $("mapPopup").classList.add("active");
         seenMapHoles.add(1);
       }

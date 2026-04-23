@@ -44,7 +44,7 @@ const COURSES = {
       t58: { label:"⚫ 58", length:5710, rating:70.5, slope:124 },
       t55: { label:"🟡 55", length:5300, rating:68.3, slope:119 },
       t53: { label:"🔵 53", length:5250, rating:68.1, slope:119 },
-      t44: { label:"🔴 44", length:4644, rating:111, slope:111 }
+      t44: { label:"🔴 44", length:4644, rating:65.0, slope:111 }
     }
   },
   huseso: {
@@ -77,7 +77,7 @@ const COURSES = {
       t58: { label:"⚫ 58", length:5860, rating:71.8, slope:128 },
       t55: { label:"🟡 55", length:5510, rating:69.9, slope:124 },
       t53: { label:"🔵 53", length:5315, rating:68.9, slope:121 },
-      t48_44: { label:"🔴 48/44", length:4800, rating:89.2, slope:115 }
+      t48_44: { label:"🔴 48/44", length:4800, rating:66.2, slope:115 }
     }
   }
 };

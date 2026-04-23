@@ -28,11 +28,11 @@ const COURSES = {
   skyrup: {
     name: "Skyrup GK", location: "Sweden", par: 71,
     pars: [4, 4, 3, 5, 4, 3, 4, 4, 4, 5, 3, 4, 4, 3, 4, 4, 4, 5],
-    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
+    si: [14, 4, 18, 10, 6, 8, 2, 12, 16, 9, 17, 1, 5, 13, 7, 15, 3, 11],
     tees: {
       yellow: { label: "🟡 59", length: 5696, rating: 70.9, slope: 129 },
       white: { label: "⚪ 53", length: 5100, rating: 71.6, slope: 129 },
-      blue: { label: "🔵 47", length: 5433, rating: 67.9, slope: 123 }
+      blue: { label: "🔵 47", length: 4548, rating: 67.9, slope: 123 }
     }
   },
   norreskov: {

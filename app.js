@@ -20,70 +20,69 @@ const firebaseConfig = {
   appId: "1:403752379611:web:b7eb566ebab9abe398d8fe"
 };
 const fbApp = initializeApp(firebaseConfig);
-const auth  = getAuth(fbApp);
-const db    = getDatabase(fbApp);
+const auth = getAuth(fbApp);
+const db = getDatabase(fbApp);
 
 // ─── Course Database ─────────────────────────────────
 const COURSES = {
   skyrup: {
     name: "Skyrup GK", location: "Sweden", par: 71,
-    pars: [4,4,3,4,4,5,3,4,4, 4,3,5,4,4,3,4,5,4],
-    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    pars: [4, 4, 3, 5, 4, 3, 4, 4, 4, 5, 3, 4, 4, 3, 4, 4, 4, 5],
+    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
     tees: {
-      yellow: { label:"🟡 Yellow", length:5860, rating:70.9, slope:129 },
-      white:  { label:"⚪ White",  length:6085, rating:71.6, slope:129 },
-      blue:   { label:"🔵 Blue",   length:5433, rating:67.9, slope:123 },
-      red:    { label:"🔴 Red",    length:5145, rating:65.2, slope:117 },
+      yellow: { label: "🟡 59", length: 5696, rating: 70.9, slope: 129 },
+      white: { label: "⚪ 53", length: 5100, rating: 71.6, slope: 129 },
+      blue: { label: "🔵 47", length: 5433, rating: 67.9, slope: 123 }
     }
   },
   norreskov: {
     name: "Nørreskov GK (18 holes)", location: "Denmark", par: 70,
-    pars: [4,4,4,4,4,4,4,4,3, 4,4,4,4,4,4,4,4,3],
-    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    pars: [4, 4, 4, 4, 4, 4, 4, 4, 3, 4, 4, 4, 4, 4, 4, 4, 4, 3],
+    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
     tees: {
-      t58: { label:"⚫ 58", length:5710, rating:70.5, slope:124 },
-      t55: { label:"🟡 55", length:5300, rating:68.3, slope:119 },
-      t53: { label:"🔵 53", length:5250, rating:68.1, slope:119 },
-      t44: { label:"🔴 44", length:4644, rating:65.0, slope:111 }
+      t58: { label: "⚫ 58", length: 5710, rating: 70.5, slope: 124 },
+      t55: { label: "🟡 55", length: 5300, rating: 68.3, slope: 119 },
+      t53: { label: "🔵 53", length: 5250, rating: 68.1, slope: 119 },
+      t44: { label: "🔴 44", length: 4644, rating: 65.0, slope: 111 }
     }
   },
   huseso: {
     name: "Husesø GK (18 holes)", location: "Denmark", par: 72,
-    pars: [4,4,3,5,4,3,4,4,5, 4,4,3,5,4,3,4,4,5],
-    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    pars: [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 4, 3, 5, 4, 3, 4, 4, 5],
+    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
     tees: {
-      t58: { label:"⚫ 58", length:6010, rating:73.0, slope:131 },
-      t55: { label:"🟡 55", length:5720, rating:71.5, slope:128 },
-      t53: { label:"🔵 53", length:5380, rating:69.7, slope:123 },
-      t48: { label:"🔴 48", length:4956, rating:67.4, slope:118 }
+      t58: { label: "⚫ 58", length: 6010, rating: 73.0, slope: 131 },
+      t55: { label: "🟡 55", length: 5720, rating: 71.5, slope: 128 },
+      t53: { label: "🔵 53", length: 5380, rating: 69.7, slope: 123 },
+      t48: { label: "🔴 48", length: 4956, rating: 67.4, slope: 118 }
     }
   },
   ormehoj: {
     name: "Ormehøj GK (18 holes)", location: "Denmark", par: 72,
-    pars: [4,4,3,5,4,3,4,4,5, 4,4,3,5,4,3,4,4,5],
-    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    pars: [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 4, 3, 5, 4, 3, 4, 4, 5],
+    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
     tees: {
-      t58: { label:"⚫ 58", length:5688, rating:70.3, slope:129 },
-      t55: { label:"🟡 55", length:5504, rating:69.4, slope:127 },
-      t53: { label:"🔵 53", length:5184, rating:67.7, slope:123 },
-      t48: { label:"🔴 48", length:4732, rating:65.3, slope:117 }
+      t58: { label: "⚫ 58", length: 5688, rating: 70.3, slope: 129 },
+      t55: { label: "🟡 55", length: 5504, rating: 69.4, slope: 127 },
+      t53: { label: "🔵 53", length: 5184, rating: 67.7, slope: 123 },
+      t48: { label: "🔴 48", length: 4732, rating: 65.3, slope: 117 }
     }
   },
   huseso_norreskov: {
-    name: "Husesø/Nørreskov GK", location: "Denmark", par: 71, // 36 + 35
-    pars: [4,4,3,5,4,3,4,4,5, 4,4,4,4,4,4,4,4,3],
-    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    name: "Husesø/Nørreskov GK", location: "Denmark", par: 70, // 35 + 35
+    pars: [4, 4, 5, 4, 4, 4, 3, 4, 3, 4, 3, 4, 5, 3, 5, 4, 3, 4],
+    si: [15, 5, 13, 9, 3, 11, 7, 1, 17, 8, 18, 2, 6, 10, 4, 12, 14, 16],
     tees: {
-      t58: { label:"⚫ 58", length:5860, rating:71.8, slope:128 },
-      t55: { label:"🟡 55", length:5510, rating:69.9, slope:124 },
-      t53: { label:"🔵 53", length:5315, rating:68.9, slope:121 },
-      t48_44: { label:"🔴 48/44", length:4800, rating:66.2, slope:115 }
+      t58: { label: "⚫ 58", length: 5860, rating: 71.8, slope: 128 },
+      t55: { label: "🟡 55", length: 5510, rating: 69.9, slope: 124 },
+      t53: { label: "🔵 53", length: 5315, rating: 68.9, slope: 121 },
+      t48_44: { label: "🔴 48", length: 4800, rating: 66.2, slope: 115 }
     }
   }
 };
-const DEF_PARS = [4,4,3,5,4,3,4,4,5, 4,3,4,5,4,3,4,4,5];
-const DEF_SI   = [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14];
-const PLAYER_COLORS = ["#3dca7a","#5ba8ff","#e879f9","#fb923c","#f87171","#a78bfa","#34d399"];
+const DEF_PARS = [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5];
+const DEF_SI = [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14];
+const PLAYER_COLORS = ["#3dca7a", "#5ba8ff", "#e879f9", "#fb923c", "#f87171", "#a78bfa", "#34d399"];
 const MAX_PLAYERS = 7;
 
 function calcPH(hcpIdx, slope, rating, par) {
@@ -92,10 +91,10 @@ function calcPH(hcpIdx, slope, rating, par) {
 
 // ─── State ───────────────────────────────────────────
 let currentUser = null;
-let myUid       = null;
-let gameId      = null;
-let gameRef     = null;
-let gameData    = null;
+let myUid = null;
+let gameId = null;
+let gameRef = null;
+let gameData = null;
 let currentHole = 1;
 let selectedTee = "yellow";
 let seenSavedHoles = null;
@@ -174,7 +173,7 @@ function cleanup() {
 function showLobby(user) {
   $("lobbyPhoto").src = user.photoURL || "";
   $("lobbyName").textContent = user.displayName || user.email;
-  
+
   const savedHcp = localStorage.getItem("gm_hcp");
   if (savedHcp) $("myHCP").value = savedHcp;
 
@@ -182,7 +181,7 @@ function showLobby(user) {
   show("lobby");
 }
 
-["tabCreate","tabJoin"].forEach(id => {
+["tabCreate", "tabJoin"].forEach(id => {
   $(id).addEventListener("click", () => {
     $("tabCreate").classList.toggle("active", id === "tabCreate");
     $("tabJoin").classList.toggle("active", id === "tabJoin");
@@ -207,12 +206,12 @@ function updateCourseUI() {
   $("courseInfoCard").style.display = known ? "grid" : "none";
   if (known) {
     const c = COURSES[k];
-    
+
     // Safety check: if the browser initialized selectedTee to something invalid for this course
     if (!c.tees[selectedTee]) {
       selectedTee = Object.keys(c.tees)[0];
     }
-    
+
     const selector = $("teeSelector");
     selector.innerHTML = "";
     Object.entries(c.tees).forEach(([tKey, t]) => {
@@ -344,7 +343,7 @@ $("startRoundBtn").addEventListener("click", async () => {
 
 function renderWaiting(d) {
   const players = d.players ? Object.entries(d.players) : [];
-  const sorted = players.sort((a,b) => a[1].joinOrder - b[1].joinOrder);
+  const sorted = players.sort((a, b) => a[1].joinOrder - b[1].joinOrder);
   $("playerCount").textContent = `${sorted.length} / ${MAX_PLAYERS} players`;
 
   const slots = $("playerSlots"); slots.innerHTML = "";
@@ -356,13 +355,13 @@ function renderWaiting(d) {
       div.classList.add("filled");
       if (uid === d.hostUid) div.classList.add("host-slot");
       div.innerHTML = `
-        <img src="${p.photo||""}" alt="" class="slot-photo" style="border-color:${PLAYER_COLORS[i]}"/>
+        <img src="${p.photo || ""}" alt="" class="slot-photo" style="border-color:${PLAYER_COLORS[i]}"/>
         <div class="slot-info">
           <div class="slot-name">${p.name}${uid === d.hostUid ? " 👑" : ""}</div>
           <div class="slot-detail">HCP ${p.hcp} → PH ${p.playingHCP}</div>
         </div>`;
     } else {
-      div.innerHTML = `<div class="slot-placeholder">${i+1}</div><div class="slot-info"><div class="slot-name" style="color:var(--tx-d)">Open slot</div></div>`;
+      div.innerHTML = `<div class="slot-placeholder">${i + 1}</div><div class="slot-info"><div class="slot-name" style="color:var(--tx-d)">Open slot</div></div>`;
     }
     slots.appendChild(div);
   }
@@ -403,15 +402,15 @@ function handleUpdate(d) {
 //  SCORING HELPERS
 // ═══════════════════════════════════════════════════════
 function getPlayers(d) {
-  return Object.entries(d.players || {}).sort((a,b) => a[1].joinOrder - b[1].joinOrder);
+  return Object.entries(d.players || {}).sort((a, b) => a[1].joinOrder - b[1].joinOrder);
 }
 function ph(d, uid) { return d.players?.[uid]?.playingHCP ?? d.players?.[uid]?.hcp ?? 0; }
-function xtra(phcp, si) { const b = Math.floor(phcp/18), r = Math.round(phcp%18); return b + (si<=r?1:0); }
+function xtra(phcp, si) { const b = Math.floor(phcp / 18), r = Math.round(phcp % 18); return b + (si <= r ? 1 : 0); }
 function net(gross, phcp, si) { return gross - xtra(phcp, si); }
-function stab(gross, par, phcp, si) { return gross ? Math.max(0, par+2 - net(gross,phcp,si)) : 0; }
+function stab(gross, par, phcp, si) { return gross ? Math.max(0, par + 2 - net(gross, phcp, si)) : 0; }
 
 function totals(d, uid) {
-  const h = ph(d, uid); let s=0, n=0, p=0;
+  const h = ph(d, uid); let s = 0, n = 0, p = 0;
   Object.values(d.holes).forEach(hole => {
     if (!hole.saved) return;
     const g = hole.strokes?.[uid] || 0;
@@ -425,12 +424,12 @@ function totals(d, uid) {
 // ═══════════════════════════════════════════════════════
 function initScorecard(d) {
   $("headerCourseName").textContent = d.courseName;
-  $("roundDate").textContent = new Date().toLocaleDateString("en-GB", { weekday:"short", year:"numeric", month:"short", day:"numeric" });
+  $("roundDate").textContent = new Date().toLocaleDateString("en-GB", { weekday: "short", year: "numeric", month: "short", day: "numeric" });
 
   // Header chips
   const chips = $("headerChips"); chips.innerHTML = "";
   getPlayers(d).forEach(([uid, p], i) => {
-    chips.innerHTML += `<div class="chip" style="border-color:${PLAYER_COLORS[i]}"><img src="${p.photo||""}" class="chip-photo"/><span>${short(p.name)}</span><span class="chip-hcp">PH ${ph(d,uid)}</span></div>`;
+    chips.innerHTML += `<div class="chip" style="border-color:${PLAYER_COLORS[i]}"><img src="${p.photo || ""}" class="chip-photo"/><span>${short(p.name)}</span><span class="chip-hcp">PH ${ph(d, uid)}</span></div>`;
   });
 
   // My card
@@ -447,7 +446,7 @@ function initScorecard(d) {
   }
   // SI dropdown
   const sel = $("holeSI"); sel.innerHTML = "";
-  for (let i = 1; i <= 18; i++) { const o = document.createElement("option"); o.value=i; o.textContent=i; sel.appendChild(o); }
+  for (let i = 1; i <= 18; i++) { const o = document.createElement("option"); o.value = i; o.textContent = i; sel.appendChild(o); }
 
   show("scorecard");
   currentHole = 1;
@@ -460,7 +459,7 @@ function initScorecard(d) {
 function loadHole(n, d) {
   d = d || gameData; if (!d) return;
   currentHole = n;
-  const h = d.holes[n-1];
+  const h = d.holes[n - 1];
 
   $("currentHoleTitle").textContent = `Hole ${n}`;
   $("holePar").value = h.par;
@@ -484,7 +483,7 @@ function loadHole(n, d) {
     const div = document.createElement("div");
     div.className = "other-card";
     div.style.borderTop = `3px solid ${PLAYER_COLORS[i]}`;
-    div.innerHTML = `<img src="${p.photo||""}" class="other-photo" style="border-color:${PLAYER_COLORS[i]}"/>
+    div.innerHTML = `<img src="${p.photo || ""}" class="other-photo" style="border-color:${PLAYER_COLORS[i]}"/>
       <div class="other-name">${short(p.name)}</div>
       <div class="other-strokes">${g || "—"}</div>
       <div class="other-detail">Net ${nv} · Pts ${pv}</div>`;
@@ -502,7 +501,7 @@ function refreshScorecard(d) {
 }
 
 function updateMyBreakdown(d, n) {
-  const h = d.holes[n-1];
+  const h = d.holes[n - 1];
   const g = h.strokes?.[myUid] || 0;
   const hcp = ph(d, myUid), si = h.strokeIndex, par = h.par;
   $("myNetScore").textContent = g ? net(g, hcp, si) : "—";
@@ -522,7 +521,7 @@ function updateLeaderboard(d) {
     const div = document.createElement("div");
     div.className = "lb-card" + (p.uid === myUid ? " is-me" : "");
     div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
-    const medal = rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : `#${rank+1}`;
+    const medal = rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : `#${rank + 1}`;
     div.innerHTML = `<div class="lb-rank">${medal}</div>
       <div class="lb-name">${short(p.name)}</div>
       <div class="lb-pts">${p.pts}</div>
@@ -539,20 +538,20 @@ $("myMinus").addEventListener("click", () => adj(-1));
 
 async function adj(delta) {
   if (!gameData) return;
-  const h = gameData.holes[currentHole-1];
+  const h = gameData.holes[currentHole - 1];
   const cur = h.strokes?.[myUid] || 0;
-  await update(ref(db, `games/${gameId}/holes/${currentHole-1}/strokes`), { [myUid]: Math.max(0, cur+delta) });
+  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}/strokes`), { [myUid]: Math.max(0, cur + delta) });
 }
 
 $("holePar").addEventListener("change", async () => {
-  await update(ref(db, `games/${gameId}/holes/${currentHole-1}`), { par: parseInt($("holePar").value) });
+  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { par: parseInt($("holePar").value) });
 });
 $("holeSI").addEventListener("change", async () => {
-  await update(ref(db, `games/${gameId}/holes/${currentHole-1}`), { strokeIndex: parseInt($("holeSI").value) });
+  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { strokeIndex: parseInt($("holeSI").value) });
 });
 $("holeMeters").addEventListener("change", async () => {
   const m = $("holeMeters").value;
-  await update(ref(db, `games/${gameId}/holes/${currentHole-1}`), { meters: m ? parseInt(m) : null });
+  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { meters: m ? parseInt(m) : null });
 });
 
 // ═══════════════════════════════════════════════════════
@@ -573,14 +572,14 @@ $('saveHoleBtn').addEventListener('click', async () => {
   else await update(gameRef, { status: 'complete' });
 });
 
-$("prevHole").addEventListener("click", () => { if (currentHole > 1) loadHole(currentHole-1); });
-$("nextHole").addEventListener("click", () => { if (currentHole < 18) loadHole(currentHole+1); });
+$("prevHole").addEventListener("click", () => { if (currentHole > 1) loadHole(currentHole - 1); });
+$("nextHole").addEventListener("click", () => { if (currentHole < 18) loadHole(currentHole + 1); });
 $("endRoundBtn").addEventListener("click", async () => { if (confirm("End round now?")) await update(gameRef, { status: "complete" }); });
 
 function updateNav(d) {
   for (let i = 1; i <= 18; i++) {
     const btn = $(`hn${i}`); if (!btn) continue;
-    btn.className = "hole-nav-btn" + (d.holes?.[i-1]?.saved ? " saved" : "") + (i === currentHole ? " active" : "");
+    btn.className = "hole-nav-btn" + (d.holes?.[i - 1]?.saved ? " saved" : "") + (i === currentHole ? " active" : "");
   }
   $("prevHole").disabled = currentHole === 1;
   $("nextHole").disabled = currentHole === 18;
@@ -604,7 +603,7 @@ function renderTable(d) {
 
   // thead
   const thead = $("scorecardHead");
-  thead.innerHTML = `<tr><th>Hole</th><th>Par</th><th>SI</th>${players.map(([,p]) => `<th>${short(p.name)}</th><th>Pts</th>`).join("")}</tr>`;
+  thead.innerHTML = `<tr><th>Hole</th><th>Par</th><th>SI</th>${players.map(([, p]) => `<th>${short(p.name)}</th><th>Pts</th>`).join("")}</tr>`;
 
   // tbody
   const tbody = $("scorecardBody"); tbody.innerHTML = "";
@@ -614,7 +613,7 @@ function renderTable(d) {
   let parSum = 0;
 
   Object.values(d.holes).forEach((h, idx) => {
-    let cells = `<td><strong>${idx+1}</strong></td><td>${h.par}</td><td>${h.strokeIndex}</td>`;
+    let cells = `<td><strong>${idx + 1}</strong></td><td>${h.par}</td><td>${h.strokeIndex}</td>`;
     players.forEach(([uid], pi) => {
       const g = h.strokes?.[uid] || 0;
       const hcp = ph(d, uid);
@@ -628,9 +627,8 @@ function renderTable(d) {
 
   // tfoot
   const saved = Object.values(d.holes).filter(h => h.saved).length;
-  $("scorecardFoot").innerHTML = saved ? `<tr><td>Total</td><td>${parSum}</td><td>—</td>${
-    players.map((_, i) => `<td>${totS[i]}</td><td><strong style="color:var(--gold)">${totPts[i]}</strong></td>`).join("")
-  }</tr>` : "";
+  $("scorecardFoot").innerHTML = saved ? `<tr><td>Total</td><td>${parSum}</td><td>—</td>${players.map((_, i) => `<td>${totS[i]}</td><td><strong style="color:var(--gold)">${totPts[i]}</strong></td>`).join("")
+    }</tr>` : "";
 }
 
 // ═══════════════════════════════════════════════════════
@@ -639,11 +637,11 @@ function renderTable(d) {
 function showResults(d) {
   if (!d) return;
   $("resultsCourse").textContent = d.courseName;
-  $("resultsDate").textContent = new Date().toLocaleDateString("en-GB", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  $("resultsDate").textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   const players = getPlayers(d);
   const ranked = players.map(([uid, p], i) => ({ uid, ...p, idx: i, ...totals(d, uid) }))
-    .sort((a,b) => b.pts - a.pts || a.net - b.net);
+    .sort((a, b) => b.pts - a.pts || a.net - b.net);
 
   const winner = ranked[0];
   $("winnerBanner").textContent = ranked.length > 1 && ranked[0].pts > ranked[1].pts
@@ -654,13 +652,13 @@ function showResults(d) {
 
   const grid = $("resultsGrid"); grid.innerHTML = "";
   ranked.forEach((p, rank) => {
-    const medal = rank === 0 ? "🥇 1st" : rank === 1 ? "🥈 2nd" : rank === 2 ? "🥉 3rd" : `${rank+1}th`;
+    const medal = rank === 0 ? "🥇 1st" : rank === 1 ? "🥈 2nd" : rank === 2 ? "🥉 3rd" : `${rank + 1}th`;
     const div = document.createElement("div");
     div.className = "result-card" + (rank === 0 ? " winner" : "");
     div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
     div.innerHTML = `
       <div class="result-rank">${medal}</div>
-      <img src="${p.photo||""}" class="result-photo" style="border-color:${PLAYER_COLORS[p.idx]}"/>
+      <img src="${p.photo || ""}" class="result-photo" style="border-color:${PLAYER_COLORS[p.idx]}"/>
       <h3>${p.name}</h3>
       <div class="result-stats">
         <div class="stat-row"><span>HCP Index</span><strong>${p.hcp}</strong></div>
@@ -680,8 +678,8 @@ $("playAgainBtn").addEventListener("click", () => { cleanup(); currentHole = 1; 
 // ═══════════════════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════════════════
-function genCode() { const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(""); }
-function short(n) { if (!n) return "Player"; const p=n.trim().split(" "); return p.length>=2 ? p[0]+" "+p[1][0]+"." : p[0]; }
+function genCode() { const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return Array.from({ length: 6 }, () => c[Math.floor(Math.random() * c.length)]).join(""); }
+function short(n) { if (!n) return "Player"; const p = n.trim().split(" "); return p.length >= 2 ? p[0] + " " + p[1][0] + "." : p[0]; }
 
 // ═══════════════════════════════════════════════════════
 //  GOLFKONGERNE — SHOT POPUP
@@ -691,7 +689,7 @@ let popupQueue = [];
 function processPopupQueue() {
   if ($("shotPopup").classList.contains("active")) return;
   if (popupQueue.length === 0) return;
-  
+
   const next = popupQueue.shift();
   showShotPopup(next.names, next.holeNum, next.type);
 }
@@ -722,13 +720,13 @@ function checkGolfkongerneRules(d, h, holeNum) {
     }
   });
 
-  if (acePlayers.length > 0)    popupQueue.push({ names: acePlayers,    holeNum, type: 'ace' });
+  if (acePlayers.length > 0) popupQueue.push({ names: acePlayers, holeNum, type: 'ace' });
   if (birdiePlayers.length > 0) popupQueue.push({ names: birdiePlayers, holeNum, type: 'birdie' });
-  if (shotPlayers.length > 0)   popupQueue.push({ names: shotPlayers,   holeNum, type: 'shot' });
-  if (sipPlayers.length > 0)    popupQueue.push({ names: sipPlayers,    holeNum, type: 'sip' });
-  if (pantsPlayers.length > 0)  popupQueue.push({ names: pantsPlayers,  holeNum, type: 'pants' });
-  if (chugPlayers.length > 0)   popupQueue.push({ names: chugPlayers,   holeNum, type: 'chug' });
-  if (zeroPlayers.length > 0)   popupQueue.push({ names: zeroPlayers,   holeNum, type: 'zero' });
+  if (shotPlayers.length > 0) popupQueue.push({ names: shotPlayers, holeNum, type: 'shot' });
+  if (sipPlayers.length > 0) popupQueue.push({ names: sipPlayers, holeNum, type: 'sip' });
+  if (pantsPlayers.length > 0) popupQueue.push({ names: pantsPlayers, holeNum, type: 'pants' });
+  if (chugPlayers.length > 0) popupQueue.push({ names: chugPlayers, holeNum, type: 'chug' });
+  if (zeroPlayers.length > 0) popupQueue.push({ names: zeroPlayers, holeNum, type: 'zero' });
 
   processPopupQueue();
 }

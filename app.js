@@ -469,12 +469,12 @@ function loadHole(n, d) {
   const isSkyrup = d.courseName.toLowerCase().includes("skyrup");
   const viewMapBtn = $("viewMapBtn");
   if (viewMapBtn) {
-    if (isSkyrup && n === 1) {
+    if (isSkyrup) {
       viewMapBtn.style.display = "inline-block";
-      if (!seenMapHoles.has(1)) {
-        $("mapImage").src = "Skyrup_1.png";
+      if (!seenMapHoles.has(n)) {
+        $("mapImage").src = `Skyrup_${n}.png`;
         $("mapPopup").classList.add("active");
-        seenMapHoles.add(1);
+        seenMapHoles.add(n);
       }
     } else {
       viewMapBtn.style.display = "none";
@@ -818,7 +818,7 @@ $("shotPopup").addEventListener("click", (e) => {
 
 // Map listeners
 $("viewMapBtn")?.addEventListener("click", () => {
-  $("mapImage").src = "skyrup1.jpg";
+  $("mapImage").src = `Skyrup_${currentHole}.png`;
   $("mapPopup").classList.add("active");
 });
 $("mapDismiss")?.addEventListener("click", () => {

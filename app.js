@@ -98,6 +98,7 @@ let gameData = null;
 let currentHole = 1;
 let selectedTee = "yellow";
 let seenSavedHoles = null;
+let seenMapHoles = new Set();
 
 const $ = id => document.getElementById(id);
 const screens = { login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") };
@@ -164,6 +165,7 @@ function cleanup() {
   if (gameRef) off(gameRef);
   gameId = null; gameData = null;
   seenSavedHoles = null;
+  seenMapHoles.clear();
   localStorage.removeItem("gm_gid");
 }
 
@@ -462,6 +464,23 @@ function loadHole(n, d) {
   const h = d.holes[n - 1];
 
   $("currentHoleTitle").textContent = `Hole ${n}`;
+  
+  // Hole Map popup logic
+  const isSkyrup = d.courseName.toLowerCase().includes("skyrup");
+  const viewMapBtn = $("viewMapBtn");
+  if (viewMapBtn) {
+    if (isSkyrup && n === 1) {
+      viewMapBtn.style.display = "inline-block";
+      if (!seenMapHoles.has(1)) {
+        $("mapImage").src = "skyrup1.jpg";
+        $("mapPopup").classList.add("active");
+        seenMapHoles.add(1);
+      }
+    } else {
+      viewMapBtn.style.display = "none";
+    }
+  }
+
   $("holePar").value = h.par;
   $("holeSI").value = h.strokeIndex;
   $("holeMeters").value = h.meters || "";
@@ -795,6 +814,18 @@ $("shotPopup").addEventListener("click", (e) => {
     $("shotPopup").classList.remove("active");
     setTimeout(processPopupQueue, 400);
   }
+});
+
+// Map listeners
+$("viewMapBtn")?.addEventListener("click", () => {
+  $("mapImage").src = "skyrup1.jpg";
+  $("mapPopup").classList.add("active");
+});
+$("mapDismiss")?.addEventListener("click", () => {
+  $("mapPopup").classList.remove("active");
+});
+$("mapPopup")?.addEventListener("click", (e) => {
+  if (e.target === $("mapPopup")) $("mapPopup").classList.remove("active");
 });
 
 // Init

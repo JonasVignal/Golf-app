@@ -154,6 +154,7 @@
         <button class="nav-arrow" id="prevHole">←</button>
         <div class="hole-title">
           <h2 id="currentHoleTitle">Hole 1</h2>
+          <button class="link-btn" id="viewMapBtn" style="display:none; margin-top:4px; font-size:12px; color:var(--gold);">🗺️ View Map</button>
           <div class="hole-meta">
             <div class="hole-meta-item"><label>Par</label><select class="meta-select" id="holePar"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
             <div class="hole-meta-item"><label>SI</label><select class="meta-select" id="holeSI"></select></div>
@@ -223,6 +224,14 @@
       <p class="shot-player" id="shotPlayerName"></p>
       <p class="shot-detail" id="shotDetail"></p>
       <button class="primary-btn" id="shotDismiss">Skål! 🥃</button>
+    </div>
+  </div>
+  <!-- ══════════ MAP POPUP ══════════ -->
+  <div id="mapPopup" class="shot-popup">
+    <div class="shot-popup-card" style="padding:15px; max-width:95vw;">
+      <h2 class="shot-title" style="margin-bottom:10px;">Course Map</h2>
+      <img id="mapImage" src="" style="width:100%; border-radius:10px; max-height:60vh; object-fit:contain;" alt="Map"/>
+      <button class="primary-btn" id="mapDismiss" style="margin-top:15px;">Close</button>
     </div>
   </div>
 

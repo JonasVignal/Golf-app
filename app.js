@@ -68,6 +68,17 @@ const COURSES = {
       t53: { label:"🔵 53", length:5184, rating:67.7, slope:123 },
       t48: { label:"🔴 48", length:4732, rating:65.3, slope:117 }
     }
+  },
+  huseso_norreskov: {
+    name: "Husesø/Nørreskov GK", location: "Denmark", par: 71, // 36 + 35
+    pars: [4,4,3,5,4,3,4,4,5, 4,4,4,4,4,4,4,4,3],
+    si:   [7,11,15,3,9,17,5,1,13, 8,16,6,2,10,18,4,12,14],
+    tees: {
+      t58: { label:"⚫ 58", length:5860, rating:71.8, slope:128 },
+      t55: { label:"🟡 55", length:5510, rating:69.9, slope:124 },
+      t53: { label:"🔵 53", length:5315, rating:68.9, slope:121 },
+      t48_44: { label:"🔴 48/44", length:4800, rating:89.2, slope:115 }
+    }
   }
 };
 const DEF_PARS = [4,4,3,5,4,3,4,4,5, 4,3,4,5,4,3,4,4,5];

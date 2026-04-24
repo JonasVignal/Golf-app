@@ -205,24 +205,38 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 $("signInBtn").addEventListener("click", () => {
-  $("loginError").textContent = "Opening Google...";
-  // popup MUST be called instantly without async/await to avoid Safari popup blocking
-  signInWithPopup(auth, googleProvider).catch((e) => {
-    if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") {
-      $("loginError").textContent = "";
-      return;
-    }
-    if (e.code === "auth/popup-blocked") {
-      $("loginError").textContent = "Popup blocked! Try opening the app in Safari native instead of Facebook/Instagram browser.";
-      return;
-    }
-    const msg = {
-      "auth/unauthorized-domain": "Add this domain in Firebase → Auth → Settings → Authorized domains.",
-      "auth/operation-not-allowed": "Enable Google sign-in in Firebase.",
-      "auth/network-request-failed": "Network error — check your connection.",
-    };
-    $("loginError").textContent = msg[e.code] || `Error: ${e.code}`;
-  });
+  const errorNote = $("loginError");
+  errorNote.textContent = "Opening Google...";
+  
+  // Try popup first
+  signInWithPopup(auth, googleProvider)
+    .then(() => {
+      errorNote.textContent = "";
+    })
+    .catch((e) => {
+      console.error("Sign-in error:", e);
+      
+      // If popup is blocked or it's a mobile browser context where popups fail
+      if (e.code === "auth/popup-blocked" || e.code === "auth/cancelled-popup-request") {
+        errorNote.textContent = "Popup blocked! Redirecting to Google...";
+        // Fallback to redirect
+        signInWithRedirect(auth, googleProvider);
+        return;
+      }
+      
+      if (e.code === "auth/popup-closed-by-user") {
+        errorNote.textContent = "";
+        return;
+      }
+      
+      const msg = {
+        "auth/unauthorized-domain": "Unauthorized Domain: Add this URL in Firebase -> Auth -> Settings -> Authorized domains.",
+        "auth/operation-not-allowed": "Google sign-in is disabled in Firebase console.",
+        "auth/network-request-failed": "Network error — check your connection.",
+      };
+      
+      errorNote.textContent = `${msg[e.code] || "Error: " + e.code}`;
+    });
 });
 
 

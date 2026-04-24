@@ -122,6 +122,17 @@ const COURSES = {
       t53: { label: "🔵 53", length: 5282, rating: 68.7, slope: 123 },
       t48: { label: "🔴 48", length: 4844, rating: 66.4, slope: 117 }
     }
+  },
+  ormehoj_norreskov: {
+    name: "Ormehøj/Nørreskov GK", location: "Denmark", par: 70, // 35 + 35
+    pars: [5, 4, 3, 4, 5, 3, 4, 3, 4, 4, 3, 4, 5, 3, 5, 4, 3, 4],
+    si: [7, 3, 17, 1, 13, 11, 5, 15, 9, 8, 18, 2, 6, 10, 4, 12, 14, 16],
+    tees: {
+      t58: { label: "⚫ 58", length: 5699, rating: 70.4, slope: 127 },
+      t55: { label: "🟡 55", length: 5402, rating: 68.9, slope: 124 },
+      t53: { label: "🔵 53", length: 5217, rating: 67.9, slope: 121 },
+      t44_48: { label: "🔴 48", length: 4688, rating: 65.2, slope: 114 }
+    }
   }
 };
 const DEF_PARS = [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5];

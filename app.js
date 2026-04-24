@@ -133,25 +133,25 @@ const COURSES = {
       t53: { label: "🔵 53", length: 5217, rating: 67.9, slope: 121, lengths: [407, 336, 134, 387, 400, 134, 336, 133, 285, 336, 167, 348, 412, 159, 470, 328, 132, 273] },
       t44_48: { label: "🔴 48", length: 4688, rating: 65.2, slope: 114, lengths: [407, 289, 117, 331, 378, 122, 336, 101, 285, 294, 92, 297, 412, 124, 405, 308, 132, 258] }
     },
-  smorum_intermediate: {
-    name: "Smørum Intermediate GK",
-    location: "Denmark",
-    par: 66,
-    pars: [3,4,4,4,3,5,3,3,4,3,4,4,4,3,5,3,3,4],
-    si: [15,9,5,7,13,1,11,17,3,16,10,6,8,14,2,12,18,4],
-    tees: {
-      t38: { label: "⚫ 38", length: 3808, rating: 60.7, slope: 97, lengths: [95,231,241,233,132,435,155,106,276,95,231,241,233,132,435,155,106,276] },
-      t32: { label: "🟡 32", length: 3226, rating: 57.7, slope: 90, lengths: [95,195,187,198,122,345,145,100,226,95,195,187,198,122,345,145,100,226] }
-    }
-  }
-};
-const DEF_PARS = [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5];
-const DEF_SI = [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14];
-const PLAYER_COLORS = ["#3dca7a", "#5ba8ff", "#e879f9", "#fb923c", "#f87171", "#a78bfa", "#34d399"];
-const MAX_PLAYERS = 7;
+    smorum_intermediate: {
+      name: "Smørum Intermediate GK",
+      location: "Denmark",
+      par: 66,
+      pars: [3, 4, 4, 4, 3, 5, 3, 3, 4, 3, 4, 4, 4, 3, 5, 3, 3, 4],
+      si: [15, 9, 5, 7, 13, 1, 11, 17, 3, 16, 10, 6, 8, 14, 2, 12, 18, 4],
+      tees: {
+        t38: { label: "⚫ 38", length: 3808, rating: 60.7, slope: 97, lengths: [95, 231, 241, 233, 132, 435, 155, 106, 276, 95, 231, 241, 233, 132, 435, 155, 106, 276] },
+        t32: { label: "🟡 32", length: 3226, rating: 57.7, slope: 90, lengths: [95, 195, 187, 198, 122, 345, 145, 100, 226, 95, 195, 187, 198, 122, 345, 145, 100, 226] }
+      }
+    },
+  };
+  const DEF_PARS = [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5];
+  const DEF_SI = [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14];
+  const PLAYER_COLORS = ["#3dca7a", "#5ba8ff", "#e879f9", "#fb923c", "#f87171", "#a78bfa", "#34d399"];
+  const MAX_PLAYERS = 7;
 
-function calcPH(hcpIdx, slope, rating, par) {
-  return Math.round(hcpIdx * (slope / 113) + (rating - par));
+  function calcPH(hcpIdx, slope, rating, par) {
+    return Math.round(hcpIdx * (slope / 113) + (rating - par));
 }
 
 // ─── State ───────────────────────────────────────────

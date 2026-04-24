@@ -207,7 +207,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 $("signInBtn").addEventListener("click", () => {
   const errorNote = $("loginError");
   errorNote.textContent = "Opening Google...";
-  
+
   // Try popup first
   signInWithPopup(auth, googleProvider)
     .then(() => {
@@ -215,7 +215,7 @@ $("signInBtn").addEventListener("click", () => {
     })
     .catch((e) => {
       console.error("Sign-in error:", e);
-      
+
       // If popup is blocked or it's a mobile browser context where popups fail
       if (e.code === "auth/popup-blocked" || e.code === "auth/cancelled-popup-request") {
         errorNote.textContent = "Popup blocked! Redirecting to Google...";
@@ -223,18 +223,18 @@ $("signInBtn").addEventListener("click", () => {
         signInWithRedirect(auth, googleProvider);
         return;
       }
-      
+
       if (e.code === "auth/popup-closed-by-user") {
         errorNote.textContent = "";
         return;
       }
-      
+
       const msg = {
         "auth/unauthorized-domain": "Unauthorized Domain: Add this URL in Firebase -> Auth -> Settings -> Authorized domains.",
         "auth/operation-not-allowed": "Google sign-in is disabled in Firebase console.",
         "auth/network-request-failed": "Network error — check your connection.",
       };
-      
+
       errorNote.textContent = `${msg[e.code] || "Error: " + e.code}`;
     });
 });

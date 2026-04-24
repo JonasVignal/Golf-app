@@ -79,6 +79,17 @@ const COURSES = {
       t48_44: { label: "🔴 48", length: 4800, rating: 66.2, slope: 115 }
     }
   },
+  norreskov_huseso: {
+    name: "Nørreskov/Husesø GK", location: "Denmark", par: 70, // 35 + 35
+    pars: [4, 3, 4, 5, 3, 5, 4, 3, 4, 4, 4, 5, 4, 4, 4, 3, 4, 3],
+    si: [7, 17, 1, 5, 9, 3, 11, 13, 15, 16, 6, 14, 10, 4, 12, 8, 2, 18],
+    tees: {
+      t58: { label: "⚫ 58", length: 5860, rating: 71.8, slope: 128 },
+      t55: { label: "🟡 55", length: 5510, rating: 69.9, slope: 124 },
+      t53: { label: "🔵 53", length: 5315, rating: 68.9, slope: 121 },
+      t44_48: { label: "🔴 44/48", length: 4800, rating: 66.2, slope: 115 }
+    }
+  },
   huseso_ormehoj: {
     name: "Husesø/Ormehøj GK", location: "Denmark", par: 70, // 35 + 35
     pars: [4, 4, 5, 4, 4, 4, 3, 4, 3, 5, 4, 3, 4, 5, 3, 4, 3, 4],

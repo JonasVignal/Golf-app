@@ -139,7 +139,7 @@ const COURSES = {
     pars: [3, 3, 4, 5, 4, 3, 4, 3, 4, 3, 3, 4, 5, 4, 3, 4, 3, 4],
     si: [15, 7, 3, 1, 11, 17, 13, 9, 5, 16, 8, 4, 2, 12, 18, 14, 10, 6],
     tees: {
-      t42: { label: "🟡 42", length: 4166, rating: 63.8, slope: 113 }
+      t42: { label: "🟡 42", length: 4158, rating: 63.8, slope: 113, lengths: [111, 190, 333, 431, 260, 125, 238, 133, 262, 111, 190, 333, 431, 260, 125, 238, 133, 262] }
     }
   }
 };
@@ -318,7 +318,7 @@ $("createGameBtn").addEventListener("click", async () => {
     const c = COURSES[ck], t = c.tees[selectedTee];
     courseName = `${c.name} (${selectedTee})`;
     pars = c.pars; si = c.si;
-    teeInfo = { key: selectedTee, label: t.label, length: t.length, rating: t.rating, slope: t.slope, par: c.par };
+    teeInfo = { key: selectedTee, label: t.label, length: t.length, rating: t.rating, slope: t.slope, par: c.par, lengths: t.lengths };
   } else {
     courseName = $("customCourseName").value.trim() || "Golf Course";
     pars = DEF_PARS; si = DEF_SI;
@@ -329,7 +329,7 @@ $("createGameBtn").addEventListener("click", async () => {
   gameRef = ref(db, `games/${gameId}`);
 
   const holes = {};
-  for (let i = 0; i < 18; i++) holes[i] = { par: pars[i], strokeIndex: si[i], meters: null, strokes: {}, saved: false };
+  for (let i = 0; i < 18; i++) holes[i] = { par: pars[i], strokeIndex: si[i], meters: (teeInfo?.lengths?.[i] || null), strokes: {}, saved: false };
 
   const players = {};
   players[myUid] = {

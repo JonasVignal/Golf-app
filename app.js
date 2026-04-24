@@ -144,14 +144,14 @@ const COURSES = {
     }
   },
 
+}
+const DEF_PARS = [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5];
+const DEF_SI = [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14];
+const PLAYER_COLORS = ["#3dca7a", "#5ba8ff", "#e879f9", "#fb923c", "#f87171", "#a78bfa", "#34d399"];
+const MAX_PLAYERS = 7;
 
-  const DEF_PARS = [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5];
-  const DEF_SI = [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14];
-  const PLAYER_COLORS = ["#3dca7a", "#5ba8ff", "#e879f9", "#fb923c", "#f87171", "#a78bfa", "#34d399"];
-  const MAX_PLAYERS = 7;
-
-  function calcPH(hcpIdx, slope, rating, par) {
-    return Math.round(hcpIdx * (slope / 113) + (rating - par));
+function calcPH(hcpIdx, slope, rating, par) {
+  return Math.round(hcpIdx * (slope / 113) + (rating - par));
 }
 
 // ─── State ───────────────────────────────────────────

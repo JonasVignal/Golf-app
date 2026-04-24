@@ -111,6 +111,17 @@ const COURSES = {
       t53: { label: "🔵 53", length: 5217, rating: 67.9, slope: 121 },
       t44_48: { label: "🔴 48", length: 4688, rating: 65.2, slope: 114 }
     }
+  },
+  ormehoj_huseso: {
+    name: "Ormehøj/Husesø GK", location: "Denmark", par: 70, // 35 + 35
+    pars: [5, 4, 3, 4, 5, 3, 4, 3, 4, 4, 4, 5, 4, 4, 3, 4, 3, 4],
+    si: [7, 3, 17, 1, 13, 11, 5, 15, 9, 16, 6, 14, 10, 4, 12, 8, 2, 18],
+    tees: {
+      t58: { label: "⚫ 58", length: 5849, rating: 71.7, slope: 130 },
+      t55: { label: "🟡 55", length: 5612, rating: 70.4, slope: 128 },
+      t53: { label: "🔵 53", length: 5282, rating: 68.7, slope: 123 },
+      t48: { label: "🔴 48", length: 4844, rating: 66.4, slope: 117 }
+    }
   }
 };
 const DEF_PARS = [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5];

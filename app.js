@@ -133,6 +133,14 @@ const COURSES = {
       t53: { label: "🔵 53", length: 5217, rating: 67.9, slope: 121 },
       t44_48: { label: "🔴 48", length: 4688, rating: 65.2, slope: 114 }
     }
+  },
+  albertslund: {
+    name: "Albertslund GK (18 holes)", location: "Denmark", par: 66,
+    pars: [3, 3, 4, 5, 4, 3, 4, 3, 4, 3, 3, 4, 5, 4, 3, 4, 3, 4],
+    si: [15, 7, 3, 1, 11, 17, 13, 9, 5, 16, 8, 4, 2, 12, 18, 14, 10, 6],
+    tees: {
+      t42: { label: "🟡 42", length: 4166, rating: 63.8, slope: 113 }
+    }
   }
 };
 const DEF_PARS = [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5];

@@ -84,10 +84,10 @@ const COURSES = {
     pars: [4, 3, 4, 5, 3, 5, 4, 3, 4, 4, 4, 5, 4, 4, 4, 3, 4, 3],
     si: [7, 17, 1, 5, 9, 3, 11, 13, 15, 16, 6, 14, 10, 4, 12, 8, 2, 18],
     tees: {
-      t58: { label: "⚫ 58", length: 5860, rating: 71.8, slope: 128 },
+      t58: { label: "⚫ 58", length: 5860, rating: 71.7, slope: 128 },
       t55: { label: "🟡 55", length: 5510, rating: 69.9, slope: 124 },
       t53: { label: "🔵 53", length: 5315, rating: 68.9, slope: 121 },
-      t44_48: { label: "🔴 44/48", length: 4800, rating: 66.2, slope: 115 }
+      t44_48: { label: "🔴 48", length: 4800, rating: 66.2, slope: 115 }
     }
   },
   huseso_ormehoj: {
@@ -99,6 +99,17 @@ const COURSES = {
       t55: { label: "🟡 55", length: 5612, rating: 70.4, slope: 128 },
       t53: { label: "🔵 53", length: 5282, rating: 68.7, slope: 123 },
       t48: { label: "🔴 48", length: 4844, rating: 66.4, slope: 117 }
+    }
+  },
+  norreskov_ormehoj: {
+    name: "Nørreskov/Ormehøj GK", location: "Denmark", par: 70, // 35 + 35
+    pars: [4, 3, 4, 5, 3, 5, 4, 3, 4, 5, 4, 3, 4, 5, 3, 4, 3, 4],
+    si: [7, 17, 1, 5, 9, 3, 11, 13, 15, 8, 4, 18, 2, 14, 12, 6, 16, 10],
+    tees: {
+      t58: { label: "⚫ 58", length: 5699, rating: 70.4, slope: 127 },
+      t55: { label: "🟡 55", length: 5402, rating: 68.9, slope: 124 },
+      t53: { label: "🔵 53", length: 5217, rating: 67.9, slope: 121 },
+      t44_48: { label: "🔴 48", length: 4688, rating: 65.2, slope: 114 }
     }
   }
 };

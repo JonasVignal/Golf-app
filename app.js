@@ -37,8 +37,8 @@ const COURSES = {
   },
   norreskov: {
     name: "Nørreskov GK (18 holes)", location: "Denmark", par: 70,
-    pars: [4, 4, 4, 4, 4, 4, 4, 4, 3, 4, 4, 4, 4, 4, 4, 4, 4, 3],
-    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
+    pars: [4, 3, 4, 5, 3, 5, 4, 3, 4, 4, 3, 4, 5, 3, 5, 4, 3, 4],
+    si: [7, 17, 1, 5, 9, 3, 11, 13, 15, 8, 18, 2, 6, 10, 4, 12, 14, 16],
     tees: {
       t58: { label: "⚫ 58", length: 5710, rating: 70.5, slope: 124 },
       t55: { label: "🟡 55", length: 5300, rating: 68.3, slope: 119 },
@@ -47,20 +47,20 @@ const COURSES = {
     }
   },
   huseso: {
-    name: "Husesø GK (18 holes)", location: "Denmark", par: 72,
-    pars: [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 4, 3, 5, 4, 3, 4, 4, 5],
-    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
+    name: "Husesø GK (18 holes)", location: "Denmark", par: 70,
+    pars: [4, 4, 5, 4, 4, 3, 4, 3, 4, 4, 4, 5, 4, 4, 4, 3, 4, 3],
+    si: [15, 5, 13, 9, 3, 11, 7, 1, 17, 16, 6, 14, 10, 4, 12, 8, 2, 18],
     tees: {
       t58: { label: "⚫ 58", length: 6010, rating: 73.0, slope: 131 },
       t55: { label: "🟡 55", length: 5720, rating: 71.5, slope: 128 },
       t53: { label: "🔵 53", length: 5380, rating: 69.7, slope: 123 },
-      t48: { label: "🔴 48", length: 4956, rating: 67.4, slope: 118 }
+      t48: { label: "🔴 48", length: 4956, rating: 67.5, slope: 118 }
     }
   },
   ormehoj: {
-    name: "Ormehøj GK (18 holes)", location: "Denmark", par: 72,
-    pars: [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 4, 3, 5, 4, 3, 4, 4, 5],
-    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
+    name: "Ormehøj GK (18 holes)", location: "Denmark", par: 70,
+    pars: [5, 4, 3, 4, 5, 3, 4, 3, 4, 5, 4, 3, 4, 5, 3, 4, 3, 4],
+    si: [7, 3, 17, 1, 13, 11, 5, 15, 9, 8, 4, 18, 2, 14, 12, 6, 16, 10],
     tees: {
       t58: { label: "⚫ 58", length: 5688, rating: 70.3, slope: 129 },
       t55: { label: "🟡 55", length: 5504, rating: 69.4, slope: 127 },
@@ -80,14 +80,14 @@ const COURSES = {
     }
   },
   huseso_ormehoj: {
-    name: "Husesø/Ormehøj GK", location: "Denmark", par: 72, // 36 + 36
-    pars: [4, 4, 3, 5, 4, 3, 4, 4, 5, 4, 4, 3, 5, 4, 3, 4, 4, 5],
-    si: [7, 11, 15, 3, 9, 17, 5, 1, 13, 8, 16, 6, 2, 10, 18, 4, 12, 14],
+    name: "Husesø/Ormehøj GK", location: "Denmark", par: 70, // 35 + 35
+    pars: [4, 4, 5, 4, 4, 4, 3, 4, 3, 5, 4, 3, 4, 5, 3, 4, 3, 4],
+    si: [15, 5, 13, 9, 3, 11, 7, 1, 17, 8, 4, 18, 2, 14, 12, 6, 16, 10],
     tees: {
       t58: { label: "⚫ 58", length: 5849, rating: 71.7, slope: 130 },
-      t55: { label: "🟡 55", length: 5612, rating: 70.5, slope: 128 },
+      t55: { label: "🟡 55", length: 5612, rating: 70.4, slope: 128 },
       t53: { label: "🔵 53", length: 5282, rating: 68.7, slope: 123 },
-      t48: { label: "🔴 48", length: 4844, rating: 66.4, slope: 118 }
+      t48: { label: "🔴 48", length: 4844, rating: 66.4, slope: 117 }
     }
   }
 };
@@ -475,7 +475,7 @@ function loadHole(n, d) {
   const h = d.holes[n - 1];
 
   $("currentHoleTitle").textContent = `Hole ${n}`;
-  
+
   // Hole Map popup logic
   const isSkyrup = d.courseName.toLowerCase().includes("skyrup");
   const viewMapBtn = $("viewMapBtn");

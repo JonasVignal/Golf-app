@@ -184,7 +184,7 @@ let seenMapHoles = new Set();
 // Global Helper
 const $ = id => document.getElementById(id);
 
-// Safe show function (no dependencies)
+// Safe show function
 function show(name) {
   const ids = ["login", "lobby", "waiting", "scorecard", "results"];
   ids.forEach(id => {
@@ -192,13 +192,6 @@ function show(name) {
     if (el) el.classList.toggle("active", id === name);
   });
 }
-
-// Global Recovery Function (Defined early)
-window.forceLogin = () => {
-  console.warn("Manual recovery triggered.");
-  const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
-  show("login");
-};
 
 // Global error handlers for mobile debugging
 window.addEventListener('error', (e) => {
@@ -213,17 +206,12 @@ window.addEventListener('unhandledrejection', (e) => {
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
-let isInitialCheck = true;
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// 1. Set up observer FIRST
 onAuthStateChanged(auth, user => {
-  console.log("Auth State:", user ? "In" : "Out");
   currentUser = user; myUid = user?.uid || null;
-
   if (user) {
-    const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
     const sid = localStorage.getItem("gm_gid");
     if (sid) { 
       gameId = sid; gameRef = ref(db, `games/${gameId}`); 
@@ -231,45 +219,20 @@ onAuthStateChanged(auth, user => {
     } else {
       showLobby(user);
     }
-    isInitialCheck = false;
   } else {
-    // If no user yet, only show login if we checked redirects
-    if (!isInitialCheck) {
-      const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
-      cleanup(); show("login"); 
-    }
+    cleanup(); show("login"); 
   }
 });
 
-// 2. Handle redirect results
 getRedirectResult(auth).then((result) => {
   if (result?.user) {
     currentUser = result.user;
     myUid = result.user.uid;
     showLobby(result.user);
   }
-  finishInitialCheck("redirect-done");
 }).catch((e) => {
-  console.error("Redirect Error:", e);
   handleAuthError(e);
-  finishInitialCheck("redirect-error");
 });
-
-// 3. Timeout fail-safe
-setTimeout(() => {
-  if (isInitialCheck) {
-    console.warn("Auth check timed out.");
-    finishInitialCheck("timeout");
-  }
-}, 6000);
-
-function finishInitialCheck(source) {
-  if (!isInitialCheck) return;
-  console.log("Check finished:", source);
-  isInitialCheck = false;
-  const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
-  if (!currentUser) show("login");
-}
 
 function handleAuthError(e) {
   const msg = {
@@ -277,8 +240,6 @@ function handleAuthError(e) {
     "auth/operation-not-allowed": "Google login is disabled.",
     "auth/network-request-failed": "Network error. Check connection.",
     "auth/popup-blocked": "Popup blocked! Redirecting...",
-    "auth/internal-error": "Internal Error. Try again.",
-    "auth/user-disabled": "User account disabled."
   };
   const errEl = $("loginError");
   if (errEl) errEl.textContent = msg[e.code] || `Error: ${e.code}`;

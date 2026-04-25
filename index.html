@@ -17,20 +17,8 @@
 <body>
   <div id="app">
 
-    <!-- ══════════ LOADING SCREEN ══════════ -->
-    <div id="loadingScreen" class="screen active" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--g900); z-index: 9999; position: fixed; inset: 0;">
-      <div style="text-align: center; margin-bottom: 30px;">
-        <div class="logo-icon" style="font-size: 60px; animation: pulse 1.5s infinite;">🏌️</div>
-        <div style="font-weight: 700; color: var(--gold); letter-spacing: 2px; margin-top: 10px;">LOADING...</div>
-      </div>
-      <button onclick="window.forceLogin()" 
-              style="background: transparent; border: 1px solid rgba(232,245,238,.32); color: rgba(232,245,238,.32); padding: 8px 16px; border-radius: 8px; font-size: 11px; cursor: pointer; font-family:'Outfit', sans-serif;">
-        Stuck? Force Sign-In Screen
-      </button>
-    </div>
-
     <!-- ══════════ SCREEN 1 — SIGN IN ══════════ -->
-    <div id="loginScreen" class="screen">
+    <div id="loginScreen" class="screen active">
       <div class="bg-orbs">
         <div class="orb orb1"></div>
         <div class="orb orb2"></div>

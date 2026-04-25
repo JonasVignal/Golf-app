@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, signInAnonymously, updateProfile }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, signInAnonymously, updateProfile, setPersistence, browserLocalPersistence }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, set, get, update, onValue, off, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -22,6 +22,9 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const db = getDatabase(fbApp);
+
+// Force local persistence to help mobile browsers remember sessions after redirects
+setPersistence(auth, browserLocalPersistence).catch(console.error);
 
 // ─── Course Database ─────────────────────────────────
 const COURSES = {
@@ -194,12 +197,35 @@ window.addEventListener('unhandledrejection', (e) => {
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
-// Explicitly handle redirect results just in case there's old state
+// Explicitly handle redirect results. On mobile, this is often necessary to "catch" the login state
 getRedirectResult(auth).then((result) => {
-  if (result) $("loginError").textContent = "Login completed!";
+  if (result && result.user) {
+    console.log("Redirect sign-in successful:", result.user.displayName);
+    // showLobby will be handled by onAuthStateChanged, but we can nudge it here
+    hideLoginError();
+  }
 }).catch((e) => {
-  console.error(e);
+  console.error("Redirect Result Error:", e);
+  handleAuthError(e);
 });
+
+function hideLoginError() {
+  const el = $("loginError");
+  if (el) el.textContent = "";
+}
+
+function handleAuthError(e) {
+  const msg = {
+    "auth/unauthorized-domain": "Unauthorized Domain: Add this URL in Firebase -> Auth -> Settings -> Authorized domains.",
+    "auth/operation-not-allowed": "Google sign-in is disabled in Firebase console.",
+    "auth/network-request-failed": "Network error — check your connection.",
+    "auth/popup-blocked": "Popup blocked! Redirecting instead...",
+    "auth/cancelled-popup-request": "",
+    "auth/popup-closed-by-user": ""
+  };
+  const errEl = $("loginError");
+  if (errEl) errEl.textContent = msg[e.code] || `Error: ${e.code}`;
+}
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
@@ -207,36 +233,27 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 $("signInBtn").addEventListener("click", () => {
   const errorNote = $("loginError");
   errorNote.textContent = "Opening Google...";
+  
+  // Mobile browsers (especially Safari/iOS) and in-app browsers (IG/FB) 
+  // work MUCH better with Redirect than Popup.
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isInApp = /FBAN|FBAV|Instagram|LBBROWSER|Line/i.test(navigator.userAgent);
 
-  // Try popup first
-  signInWithPopup(auth, googleProvider)
-    .then(() => {
-      errorNote.textContent = "";
-    })
-    .catch((e) => {
-      console.error("Sign-in error:", e);
-
-      // If popup is blocked or it's a mobile browser context where popups fail
-      if (e.code === "auth/popup-blocked" || e.code === "auth/cancelled-popup-request") {
-        errorNote.textContent = "Popup blocked! Redirecting to Google...";
-        // Fallback to redirect
-        signInWithRedirect(auth, googleProvider);
-        return;
-      }
-
-      if (e.code === "auth/popup-closed-by-user") {
-        errorNote.textContent = "";
-        return;
-      }
-
-      const msg = {
-        "auth/unauthorized-domain": "Unauthorized Domain: Add this URL in Firebase -> Auth -> Settings -> Authorized domains.",
-        "auth/operation-not-allowed": "Google sign-in is disabled in Firebase console.",
-        "auth/network-request-failed": "Network error — check your connection.",
-      };
-
-      errorNote.textContent = `${msg[e.code] || "Error: " + e.code}`;
-    });
+  if (isMobile || isInApp) {
+    if (isInApp) errorNote.textContent = "Redirecting... (Note: In-app browsers like Instagram suggest 'Open in Safari' if this fails)";
+    signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+  } else {
+    signInWithPopup(auth, googleProvider)
+      .then(() => hideLoginError())
+      .catch((e) => {
+        if (e.code === "auth/popup-blocked" || e.code === "auth/cancelled-popup-request") {
+          errorNote.textContent = "Popup blocked! Redirecting...";
+          signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+        } else {
+          handleAuthError(e);
+        }
+      });
+  }
 });
 
 

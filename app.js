@@ -197,16 +197,23 @@ window.addEventListener('unhandledrejection', (e) => {
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
-// Explicitly handle redirect results. On mobile, this is often necessary to "catch" the login state
+let isInitialCheck = true;
+
+// Explicitly handle redirect results. On mobile, this is key.
 getRedirectResult(auth).then((result) => {
-  if (result && result.user) {
+  if (result?.user) {
     console.log("Redirect sign-in successful:", result.user.displayName);
-    // showLobby will be handled by onAuthStateChanged, but we can nudge it here
-    hideLoginError();
+    currentUser = result.user;
+    myUid = result.user.uid;
+    showLobby(result.user);
   }
+  isInitialCheck = false;
+  $("loadingScreen").style.display = "none";
 }).catch((e) => {
   console.error("Redirect Result Error:", e);
   handleAuthError(e);
+  isInitialCheck = false;
+  $("loadingScreen").style.display = "none";
 });
 
 function hideLoginError() {
@@ -216,8 +223,8 @@ function hideLoginError() {
 
 function handleAuthError(e) {
   const msg = {
-    "auth/unauthorized-domain": "Unauthorized Domain: Add this URL in Firebase -> Auth -> Settings -> Authorized domains.",
-    "auth/operation-not-allowed": "Google sign-in is disabled in Firebase console.",
+    "auth/unauthorized-domain": "Unauthorized Domain! Add this site to Firebase -> Auth -> Settings -> Authorized domains.",
+    "auth/operation-not-allowed": "Google login is disabled in Firebase console.",
     "auth/network-request-failed": "Network error — check your connection.",
     "auth/popup-blocked": "Popup blocked! Redirecting instead...",
     "auth/cancelled-popup-request": "",
@@ -262,11 +269,21 @@ $("lobbySignOut").addEventListener("click", () => signOut(auth));
 onAuthStateChanged(auth, user => {
   currentUser = user;
   myUid = user?.uid || null;
+
   if (user) {
+    // Hide loading screen if it's still there
+    $("loadingScreen").style.display = "none";
     const sid = localStorage.getItem("gm_gid");
     if (sid) { gameId = sid; gameRef = ref(db, `games/${gameId}`); attachListener(); return; }
     showLobby(user);
-  } else { cleanup(); show("login"); }
+  } else {
+    // ONLY show login if we are NOT in the middle of a redirect check
+    if (!isInitialCheck) {
+      $("loadingScreen").style.display = "none";
+      cleanup(); 
+      show("login"); 
+    }
+  }
 });
 
 function cleanup() {

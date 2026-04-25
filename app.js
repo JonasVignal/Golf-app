@@ -369,6 +369,7 @@ $("createGameBtn").addEventListener("click", async () => {
     pars = DEF_PARS; si = DEF_SI;
   }
   const ph = teeInfo ? calcPH(hcpIdx, teeInfo.slope, teeInfo.rating, teeInfo.par) : Math.round(hcpIdx);
+  const trackPutts = $("trackPutts").checked;
 
   gameId = genCode();
   gameRef = ref(db, `games/${gameId}`);
@@ -392,7 +393,7 @@ $("createGameBtn").addEventListener("click", async () => {
   };
 
   await set(gameRef, {
-    status: "waiting", courseName, scoringSystem: scoring, teeInfo,
+    status: "waiting", courseName, scoringSystem: scoring, trackPutts, teeInfo,
     hostUid: myUid, createdAt: serverTimestamp(), players, holes
   });
 
@@ -613,7 +614,7 @@ function loadHole(n, d) {
   $("myPuttsVal").textContent = myPutts;
 
   // Show/Hide Putt counter
-  const isPutting = d.scoringSystem === "putting";
+  const isPutting = d.trackPutts;
   $("puttCounterSection").classList.toggle("hidden", !isPutting);
 
   updateMyBreakdown(d, n);
@@ -634,7 +635,7 @@ function loadHole(n, d) {
     div.style.borderTop = `3px solid ${PLAYER_COLORS[i]}`;
     
     let detailHTML = `Net ${nv} · Pts ${pv}`;
-    if (d.scoringSystem === 'putting') {
+    if (d.trackPutts) {
       detailHTML += ` · Putts ${pt}`;
     }
 
@@ -677,12 +678,13 @@ function updateLeaderboard(d) {
     div.className = "lb-card" + (p.uid === myUid ? " is-me" : "");
     div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
     const medal = rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : `#${rank + 1}`;
-    const isP = d.scoringSystem === 'putting';
-    const primaryScore = isP ? p.totalPutts : p.pts;
-    const primaryLabel = isP ? 'putts' : 'pts';
-    const subLabel = isP ? `${p.strokes} st · ${p.pts} pts` : `pts · ${p.strokes} strokes`;
+    const isP = d.trackPutts;
+    const primaryScore = p.pts;
+    const primaryLabel = 'pts';
+    let subLabel = `${p.strokes} st`;
+    if (isP) subLabel += ` · ${p.totalPutts} putts`;
 
-    div.innerHTML = `<div class="lb-rank">${medal}</div>
+    div.innerHTML = `<div class=" lb-rank">${medal}</div>
       <div class="lb-name">${short(p.name)}</div>
       <div class="lb-pts">${primaryScore}</div>
       <div class="lb-lbl">${primaryLabel} · ${subLabel}</div>`;
@@ -763,13 +765,15 @@ function badge(g, par, hcp, si) {
 function renderTable(d) {
   if (!d) return;
   const players = getPlayers(d);
-  const isP = d.scoringSystem === 'putting';
+  const isP = d.trackPutts;
 
   // thead
   const thead = $("scorecardHead");
   let headerHTML = `<tr><th>Hole</th><th>Par</th><th>SI</th>`;
   players.forEach(([, p]) => {
-    headerHTML += `<th>${short(p.name)}</th><th>${isP ? 'Putts' : 'Pts'}</th>`;
+    headerHTML += `<th>${short(p.name)}</th>`;
+    if (isP) headerHTML += `<th>P</th>`;
+    headerHTML += `<th>Pts</th>`;
   });
   headerHTML += `</tr>`;
   thead.innerHTML = headerHTML;
@@ -788,8 +792,10 @@ function renderTable(d) {
       const pt = h.putts?.[uid] || 0;
       const hcp = ph(d, uid);
       const pts = g ? stab(g, h.par, hcp, h.strokeIndex) : 0;
-      cells += `<td>${badge(g, h.par, hcp, h.strokeIndex)}</td><td>${isP ? pt : (g ? pts : "—")}</td>`;
-      if (h.saved) { totS[pi = i] += g; totPts[pi = i] += pts; totPutts[pi = i] += pt; }
+      cells += `<td>${badge(g, h.par, hcp, h.strokeIndex)}</td>`;
+      if (isP) cells += `<td>${pt || 0}</td>`;
+      cells += `<td>${g ? pts : "—"}</td>`;
+      if (h.saved) { totS[i] += g; totPts[i] += pts; totPutts[i] += pt; }
     });
     if (h.saved) parSum += h.par;
     const tr = document.createElement("tr"); tr.innerHTML = cells; tbody.appendChild(tr);
@@ -800,7 +806,9 @@ function renderTable(d) {
   if (saved) {
     let footHTML = `<tr><td>Total</td><td>${parSum}</td><td>—</td>`;
     players.forEach((_, i) => {
-      footHTML += `<td>${totS[i]}</td><td><strong style="color:var(--gold)">${isP ? totPutts[i] : totPts[i]}</strong></td>`;
+      footHTML += `<td>${totS[i]}</td>`;
+      if (isP) footHTML += `<td>${totPutts[i]}</td>`;
+      footHTML += `<td><strong style="color:var(--gold)">${totPts[i]}</strong></td>`;
     });
     footHTML += `</tr>`;
     $("scorecardFoot").innerHTML = footHTML;
@@ -818,24 +826,15 @@ function showResults(d) {
   $("resultsDate").textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   const players = getPlayers(d);
-  const isPutting = d.scoringSystem === 'putting';
+  const isP = d.trackPutts;
 
   const ranked = players.map(([uid, p], i) => ({ uid, ...p, idx: i, ...totals(d, uid) }))
-    .sort((a, b) => {
-      if (isPutting) return a.totalPutts - b.totalPutts || a.strokes - b.strokes;
-      return b.pts - a.pts || a.net - b.net;
-    });
+    .sort((a, b) => b.pts - a.pts || a.net - b.net);
 
   const winner = ranked[0];
-  if (isPutting) {
-    $("winnerBanner").textContent = ranked.length > 1 && ranked[0].totalPutts < ranked[1].totalPutts
-      ? `🏆 ${winner.name} wins with only ${winner.totalPutts} putts!`
-      : `🏆 ${winner.name} — ${winner.totalPutts} putts`;
-  } else {
-    $("winnerBanner").textContent = ranked.length > 1 && ranked[0].pts > ranked[1].pts
-      ? `🏆 ${winner.name} wins with ${winner.pts} points!`
-      : `🏆 ${winner.name} — ${winner.pts} points`;
-  }
+  $("winnerBanner").textContent = ranked.length > 1 && ranked[0].pts > ranked[1].pts
+    ? `🏆 ${winner.name} wins with ${winner.pts} points!`
+    : `🏆 ${winner.name} — ${winner.pts} points`;
 
   const grid = $("resultsGrid"); grid.innerHTML = "";
   ranked.forEach((p, rank) => {
@@ -849,11 +848,11 @@ function showResults(d) {
       <div class="stat-row"><span>Playing HCP</span><strong>${p.playingHCP}</strong></div>
       <div class="stat-row"><span>Strokes</span><strong>${p.strokes}</strong></div>
       <div class="stat-row"><span>Net</span><strong>${p.net}</strong></div>
-      <div class="stat-row ${!isPutting ? 'highlight' : ''}"><span>Stableford</span><strong>${p.pts} pts</strong></div>
+      <div class="stat-row highlight"><span>Stableford</span><strong>${p.pts} pts</strong></div>
     `;
     
-    if (isPutting) {
-      statsHTML += `<div class="stat-row highlight"><span>Total Putts</span><strong>${p.totalPutts}</strong></div>`;
+    if (isP) {
+      statsHTML += `<div class="stat-row highlight" style="background:rgba(240,192,64,.1)"><span>Total Putts</span><strong>${p.totalPutts}</strong></div>`;
     }
 
     div.innerHTML = `

@@ -167,6 +167,7 @@ const MAX_PLAYERS = 7;
 function calcPH(hcpIdx, slope, rating, par) {
   return Math.round(hcpIdx * (slope / 113) + (rating - par));
 }
+const short = (name) => name ? name.split(" ")[0] : "Player";
 
 
 // ─── State ───────────────────────────────────────────
@@ -181,8 +182,12 @@ let seenSavedHoles = null;
 let seenMapHoles = new Set();
 
 const $ = id => document.getElementById(id);
-const screens = { login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") };
-function show(name) { Object.values(screens).forEach(s => s.classList.remove("active")); screens[name].classList.add("active"); }
+const screens = { 
+  login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") 
+};
+function show(name) { 
+  Object.entries(screens).forEach(([k, s]) => { if (s) s.classList.toggle("active", k === name); });
+}
 
 // Global error handlers for mobile debugging
 window.addEventListener('error', (e) => {
@@ -225,11 +230,8 @@ setTimeout(() => {
 function finishInitialCheck() {
   if (!isInitialCheck) return;
   isInitialCheck = false;
-  $("loadingScreen").style.display = "none";
-  if (!currentUser) {
-    cleanup();
-    show("login");
-  }
+  const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
+  if (!currentUser) { cleanup(); show("login"); }
 }
 
 function hideLoginError() {
@@ -283,21 +285,18 @@ $("signInBtn").addEventListener("click", () => {
 $("lobbySignOut").addEventListener("click", () => signOut(auth));
 
 onAuthStateChanged(auth, user => {
-  currentUser = user;
-  myUid = user?.uid || null;
+  currentUser = user; myUid = user?.uid || null;
 
   if (user) {
-    // Hide loading screen if it's still there
-    $("loadingScreen").style.display = "none";
+    const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
     const sid = localStorage.getItem("gm_gid");
     if (sid) { gameId = sid; gameRef = ref(db, `games/${gameId}`); attachListener(); return; }
     showLobby(user);
   } else {
     // ONLY show login if we are NOT in the middle of a redirect check
     if (!isInitialCheck) {
-      $("loadingScreen").style.display = "none";
-      cleanup();
-      show("login");
+      const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
+      cleanup(); show("login"); 
     }
   }
 });
@@ -486,8 +485,21 @@ $("copyCodeBtn").addEventListener("click", () => {
 });
 
 $("cancelGameBtn").addEventListener("click", async () => {
-  if (gameRef) await update(gameRef, { status: "cancelled" });
-  cleanup(); showLobby(currentUser);
+  if (!gameData || !gameRef) return;
+  
+  const isHost = myUid === gameData.hostUid;
+  if (isHost) {
+    if (confirm("Cancel round for everyone?")) {
+      await update(gameRef, { status: "cancelled" });
+    }
+  } else {
+    // Just leave as player
+    if (confirm("Leave this game?")) {
+      await update(ref(db, `games/${gameId}/players/${myUid}`), null);
+      cleanup();
+      showLobby(currentUser);
+    }
+  }
 });
 
 $("startRoundBtn").addEventListener("click", async () => {

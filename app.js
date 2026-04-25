@@ -181,6 +181,40 @@ let selectedTee = "yellow";
 let seenSavedHoles = null;
 let seenMapHoles = new Set();
 
+// 1. ATTACH LISTENERS IMMEDIATELY
+const $ = id => document.getElementById(id);
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+// Sign-in button moved to the top for absolute reliability
+if ($("signInBtn")) {
+  $("signInBtn").addEventListener("click", () => {
+    const errorNote = $("loginError");
+    if (errorNote) errorNote.textContent = "Connecting to Google...";
+    
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+    } else {
+      signInWithPopup(auth, googleProvider)
+        .then(() => { if (errorNote) errorNote.textContent = ""; })
+        .catch((e) => {
+          if (e.code === "auth/popup-blocked") {
+            signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+          } else {
+            handleAuthError(e);
+          }
+        });
+    }
+  });
+}
+
+const ids = ["lobbySignOut", "tabCreate", "tabJoin", "courseSelect", "createGameBtn", "joinGameBtn", "prevHole", "nextHole", "viewMapBtn", "mapDismiss", "mapPopup", "cancelGameBtn", "startRoundBtn"];
+ids.forEach(id => {
+  const el = $(id);
+  if (el && id === "lobbySignOut") el.addEventListener("click", () => signOut(auth));
+});
+
 // Global Helper
 const $ = id => document.getElementById(id);
 
@@ -248,35 +282,6 @@ function handleAuthError(e) {
 function hideLoginError() {
   const el = $("loginError"); if (el) el.textContent = "";
 }
-
-$("signInBtn").addEventListener("click", () => {
-  const errorNote = $("loginError");
-  errorNote.textContent = "Signing in...";
-  
-  // Detection for mobile/tablet or in-app browsers
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const isInApp = /FBAN|FBAV|Instagram|LBBROWSER|Line/i.test(navigator.userAgent);
-
-  if (isMobile || isInApp) {
-    // Redirect is significantly more reliable on mobile Safari and Instagram/FB browsers
-    signInWithRedirect(auth, googleProvider).catch(handleAuthError);
-  } else {
-    // Popup is fine for desktop
-    signInWithPopup(auth, googleProvider)
-      .then(() => hideLoginError())
-      .catch((e) => {
-        if (e.code === "auth/popup-blocked") {
-          errorNote.textContent = "Popup blocked! Redirecting...";
-          signInWithRedirect(auth, googleProvider).catch(handleAuthError);
-        } else {
-          handleAuthError(e);
-        }
-      });
-  }
-});
-
-$("lobbySignOut").addEventListener("click", () => signOut(auth));
-
 
 function cleanup() {
   if (gameRef) off(gameRef);

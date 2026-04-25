@@ -203,103 +203,98 @@ window.addEventListener('unhandledrejection', (e) => {
 //  AUTH
 // ═══════════════════════════════════════════════════════
 let isInitialCheck = true;
-
-// Explicitly handle redirect results. On mobile, this is key.
-getRedirectResult(auth).then((result) => {
-  if (result?.user) {
-    console.log("Redirect sign-in successful:", result.user.displayName);
-    currentUser = result.user;
-    myUid = result.user.uid;
-    showLobby(result.user);
-  }
-  finishInitialCheck();
-}).catch((e) => {
-  console.error("Redirect Result Error:", e);
-  handleAuthError(e);
-  finishInitialCheck();
-});
-
-// Fail-safe: If redirect result takes too long, just show whatever state we have
-setTimeout(() => {
-  if (isInitialCheck) {
-    console.log("Auth timeout reached - forcing check...");
-    finishInitialCheck();
-  }
-}, 3500);
-
-function finishInitialCheck() {
-  if (!isInitialCheck) return;
-  isInitialCheck = false;
-  const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
-  if (!currentUser) { cleanup(); show("login"); }
-}
-
-function hideLoginError() {
-  const el = $("loginError");
-  if (el) el.textContent = "";
-}
-
-function handleAuthError(e) {
-  const msg = {
-    "auth/unauthorized-domain": "Unauthorized Domain! Add this site to Firebase -> Auth -> Settings -> Authorized domains.",
-    "auth/operation-not-allowed": "Google login is disabled in Firebase console.",
-    "auth/network-request-failed": "Network error — check your connection.",
-    "auth/popup-blocked": "Popup blocked! Redirecting instead...",
-    "auth/cancelled-popup-request": "",
-    "auth/popup-closed-by-user": ""
-  };
-  const errEl = $("loginError");
-  if (errEl) errEl.textContent = msg[e.code] || `Error: ${e.code}`;
-}
-
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-$("signInBtn").addEventListener("click", () => {
-  const errorNote = $("loginError");
-  errorNote.textContent = "Opening Google...";
-
-  // Mobile browsers (especially Safari/iOS) and in-app browsers (IG/FB) 
-  // work MUCH better with Redirect than Popup.
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const isInApp = /FBAN|FBAV|Instagram|LBBROWSER|Line/i.test(navigator.userAgent);
-
-  if (isMobile || isInApp) {
-    if (isInApp) errorNote.textContent = "Redirecting... (Note: In-app browsers like Instagram suggest 'Open in Safari' if this fails)";
-    signInWithRedirect(auth, googleProvider).catch(handleAuthError);
-  } else {
-    signInWithPopup(auth, googleProvider)
-      .then(() => hideLoginError())
-      .catch((e) => {
-        if (e.code === "auth/popup-blocked" || e.code === "auth/cancelled-popup-request") {
-          errorNote.textContent = "Popup blocked! Redirecting...";
-          signInWithRedirect(auth, googleProvider).catch(handleAuthError);
-        } else {
-          handleAuthError(e);
-        }
-      });
-  }
-});
-
-
-$("lobbySignOut").addEventListener("click", () => signOut(auth));
-
+// 1. Set up observer FIRST
 onAuthStateChanged(auth, user => {
+  console.log("Auth State Changed:", user ? "User Logged In" : "No User");
   currentUser = user; myUid = user?.uid || null;
 
   if (user) {
     const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
     const sid = localStorage.getItem("gm_gid");
-    if (sid) { gameId = sid; gameRef = ref(db, `games/${gameId}`); attachListener(); return; }
-    showLobby(user);
+    if (sid) { 
+      gameId = sid; gameRef = ref(db, `games/${gameId}`); 
+      attachListener(); 
+    } else {
+      showLobby(user);
+    }
+    isInitialCheck = false; // Auth found, we are done checking
   } else {
-    // ONLY show login if we are NOT in the middle of a redirect check
+    // If no user yet, we might be waiting for redirect result
     if (!isInitialCheck) {
       const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
       cleanup(); show("login"); 
     }
   }
 });
+
+// 2. Handle redirect results
+getRedirectResult(auth).then((result) => {
+  if (result?.user) {
+    currentUser = result.user;
+    myUid = result.user.uid;
+    showLobby(result.user);
+  }
+  finishInitialCheck("redirect-done");
+}).catch((e) => {
+  console.error("Redirect Error:", e);
+  handleAuthError(e);
+  finishInitialCheck("redirect-error");
+});
+
+// 3. Timeout fail-safe
+setTimeout(() => {
+  if (isInitialCheck) {
+    console.warn("Auth check timed out.");
+    finishInitialCheck("timeout");
+  }
+}, 6000);
+
+function finishInitialCheck(source) {
+  if (!isInitialCheck) return;
+  isInitialCheck = false;
+  const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
+  if (!currentUser) show("login");
+}
+
+function handleAuthError(e) {
+  const msg = {
+    "auth/unauthorized-domain": "Unauthorized Domain! Add this site to Firebase Auth settings.",
+    "auth/operation-not-allowed": "Google login is disabled.",
+    "auth/network-request-failed": "Network error. Check connection.",
+    "auth/popup-blocked": "Popup blocked! Redirecting...",
+    "auth/internal-error": "Internal Error. Try again.",
+    "auth/user-disabled": "User account disabled."
+  };
+  const errEl = $("loginError");
+  if (errEl) errEl.textContent = msg[e.code] || `Error: ${e.code}`;
+}
+
+function hideLoginError() {
+  const el = $("loginError"); if (el) el.textContent = "";
+}
+
+$("signInBtn").addEventListener("click", () => {
+  const errorNote = $("loginError");
+  errorNote.textContent = "Connecting to Google...";
+  
+  // Try popup first (best for desktop and modern mobile Safari)
+  signInWithPopup(auth, googleProvider)
+    .then(() => hideLoginError())
+    .catch((e) => {
+      if (e.code === "auth/popup-blocked" || e.code === "auth/cancelled-popup-request" || e.code === "auth/popup-closed-by-user") {
+        errorNote.textContent = "Redirecting for sign-in...";
+        signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+      } else {
+        handleAuthError(e);
+      }
+    });
+});
+
+$("lobbySignOut").addEventListener("click", () => signOut(auth));
+
 
 function cleanup() {
   if (gameRef) off(gameRef);

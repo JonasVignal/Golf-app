@@ -16,14 +16,15 @@
   <div id="app">
 
     <!-- Loading Overlay -->
-    <div id="loadingScreen" class="screen active" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--g900); z-index: 9999; position: fixed; inset: 0;">
+    <div id="loadingScreen" class="screen active"
+      style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--g900); z-index: 9999; position: fixed; inset: 0;">
       <div style="text-align: center; margin-bottom: 30px;">
         <div class="logo-icon" style="font-size: 60px; animation: pulse 1.5s infinite;">🏌️</div>
         <div style="font-weight: 700; color: var(--gold); letter-spacing: 2px; margin-top: 10px;">LOADING...</div>
       </div>
-      <!-- Fail-safe link -->
-      <button onclick="document.getElementById('loadingScreen').style.display='none'; document.getElementById('loginScreen').style.display='flex'; document.getElementById('loginScreen').classList.add('active');" 
-              style="background: transparent; border: 1px solid rgba(232,245,238,.32); color: rgba(232,245,238,.32); padding: 8px 16px; border-radius: 8px; font-size: 11px; cursor: pointer; font-family:'Outfit', sans-serif;">
+      <button
+        onclick="document.getElementById('loadingScreen').style.display='none'; document.getElementById('loginScreen').style.display='flex'; document.getElementById('loginScreen').classList.add('active');"
+        style="background: transparent; border: 1px solid rgba(232,245,238,.32); color: rgba(232,245,238,.32); padding: 8px 16px; border-radius: 8px; font-size: 11px; cursor: pointer; font-family:'Outfit', sans-serif;">
         Stuck? Force Sign-In Screen
       </button>
     </div>
@@ -89,9 +90,7 @@
           </div>
           <div class="field-group" id="teeGroup">
             <label class="field-label">Tee</label>
-            <div class="tee-selector" id="teeSelector">
-              <!-- Dynamically populated -->
-            </div>
+            <div class="tee-selector" id="teeSelector"></div>
           </div>
           <div class="course-info-card" id="courseInfoCard">
             <div class="ci-row"><span>Length</span><strong id="ciLength">—</strong></div>
@@ -108,10 +107,8 @@
               <option value="both">Both</option>
             </select>
           </div>
-          <div
-            class="field-group"
-            style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2);"
-          >
+          <div class="field-group"
+            style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2);">
             <label class="field-label" style="margin-bottom: 0;">⛳ Track Putts</label>
             <label class="switch">
               <input type="checkbox" id="trackPuttsCreate" />
@@ -125,22 +122,11 @@
         <div id="joinTab" class="tab-panel">
           <div class="field-group">
             <label class="field-label">Game Code</label>
-            <input
-              type="text"
-              id="joinCode"
-              placeholder="e.g. ABC123"
-              class="field-input code-input"
-              maxlength="6"
-              autocomplete="off"
-              autocorrect="off"
-              autocapitalize="characters"
-              spellcheck="false"
-            />
+            <input type="text" id="joinCode" placeholder="e.g. ABC123" class="field-input code-input" maxlength="6"
+              autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
           </div>
-          <div
-            class="field-group"
-            style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2); margin-bottom: 20px;"
-          >
+          <div class="field-group"
+            style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2); margin-bottom: 20px;">
             <label class="field-label" style="margin-bottom: 0;">⛳ Track Putts</label>
             <label class="switch">
               <input type="checkbox" id="trackPuttsJoin" />
@@ -168,6 +154,8 @@
         <div class="player-slots" id="playerSlots"></div>
         <button class="primary-btn hidden" id="startRoundBtn">Start Round 🏁</button>
         <p class="start-hint" id="startHint">Waiting for host...</p>
+        <!-- FIX: This was missing and caused the JS crash -->
+        <button class="danger-btn" id="cancelGameBtn">Cancel Game ✕</button>
       </div>
     </div>
 
@@ -188,9 +176,7 @@
       </header>
 
       <!-- Live leaderboard bar -->
-      <div class="leaderboard-bar" id="leaderboardBar">
-        <!-- filled by JS -->
-      </div>
+      <div class="leaderboard-bar" id="leaderboardBar"></div>
 
       <!-- Hole Nav -->
       <div class="hole-nav-wrap">
@@ -203,11 +189,8 @@
           <button class="nav-arrow" id="prevHole">←</button>
           <div class="hole-title">
             <h2 id="currentHoleTitle">Hole 1</h2>
-            <button
-              class="link-btn"
-              id="viewMapBtn"
-              style="display:none; margin-top:4px; font-size:12px; color:var(--gold);"
-            >🗺️ View Map</button>
+            <button class="link-btn" id="viewMapBtn"
+              style="display:none; margin-top:4px; font-size:12px; color:var(--gold);">🗺️ View Map</button>
             <div class="hole-meta">
               <div class="hole-meta-item">
                 <label>Par</label>
@@ -239,9 +222,10 @@
             </div>
             <div class="stroke-counter">
               <button class="counter-btn" id="myMinus">−</button>
-              <div class="counter-display"><span class="counter-val" id="myStrokesVal">0</span><span
-                  class="counter-lbl"
-                >strokes</span></div>
+              <div class="counter-display">
+                <span class="counter-val" id="myStrokesVal">0</span>
+                <span class="counter-lbl">strokes</span>
+              </div>
               <button class="counter-btn" id="myPlus">+</button>
             </div>
             <div class="score-breakdown">
@@ -250,39 +234,29 @@
             </div>
 
             <!-- Putt Counter (Visible only if opted in) -->
-            <div
-              id="puttCounterSection"
-              class="hidden"
-              style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--bd);"
-            >
+            <div id="puttCounterSection" class="hidden"
+              style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--bd);">
               <div class="stroke-card-top" style="margin-bottom: 10px;">
                 <span style="font-size: 0.8rem; color: var(--gold);">PUTTS</span>
               </div>
               <div class="stroke-counter">
-                <button
-                  class="counter-btn"
-                  id="myPuttMinus"
-                  style="width: 36px; height: 36px; font-size: 1.1rem;"
-                >−</button>
+                <button class="counter-btn" id="myPuttMinus"
+                  style="width: 36px; height: 36px; font-size: 1.1rem;">−</button>
                 <div class="counter-display" style="min-width: 45px;">
                   <span class="counter-val" id="myPuttsVal" style="font-size: 2rem;">0</span>
                 </div>
-                <button
-                  class="counter-btn"
-                  id="myPuttPlus"
-                  style="width: 36px; height: 36px; font-size: 1.1rem;"
-                >+</button>
+                <button class="counter-btn" id="myPuttPlus"
+                  style="width: 36px; height: 36px; font-size: 1.1rem;">+</button>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Other players' scores — read-only -->
-        <div class="others-grid" id="othersGrid">
-          <!-- filled by JS -->
-        </div>
+        <div class="others-grid" id="othersGrid"></div>
 
-        <button class="primary-btn" id="saveHoleBtn" style="margin-top:20px; background:var(--g700);">Next Hole / Save ✅</button>
+        <button class="primary-btn" id="saveHoleBtn" style="margin-top:20px; background:var(--g700);">Next Hole / Save
+          ✅</button>
 
         <!-- Full scorecard table -->
         <div class="full-scorecard">
@@ -313,12 +287,25 @@
       </div>
     </div>
 
-    <!-- Map Popup -->
+    <!-- ───── GOLFKONGERNE SHOT POPUP ───── -->
+    <!-- FIX: shotPlayerName, shotDetail and shotDismiss were missing -->
+    <div id="shotPopup" class="shot-popup">
+      <div class="shot-popup-card">
+        <div class="shot-emoji">🍻</div>
+        <div class="shot-title">Skål!</div>
+        <div class="shot-player" id="shotPlayerName"></div>
+        <div class="shot-detail" id="shotDetail"></div>
+        <button class="primary-btn" id="shotDismiss">Skål! 🥃</button>
+      </div>
+    </div>
+
+    <!-- ───── MAP POPUP ───── -->
+    <!-- FIX: mapDismiss button now has proper id for JS listener -->
     <div id="mapPopup" class="shot-popup">
       <div class="shot-popup-card">
         <div class="shot-title">Hole Map</div>
         <img id="mapImage" src="" alt="Hole Map" style="width:100%; border-radius:12px; margin-bottom:12px" />
-        <button class="primary-btn" onclick="$('mapPopup').classList.remove('active')">Close Map</button>
+        <button class="primary-btn" id="mapDismiss">Close Map</button>
       </div>
     </div>
 
@@ -330,10 +317,12 @@
         transform: scale(1);
         opacity: 0.8;
       }
+
       50% {
         transform: scale(1.1);
         opacity: 1;
       }
+
       100% {
         transform: scale(1);
         opacity: 0.8;

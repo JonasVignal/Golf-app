@@ -667,7 +667,7 @@ function loadHole(n, d) {
 }
 
 function refreshScorecard(d) {
-  if (!screens.scorecard.classList.contains("active")) return;
+  if (!$("scorecardScreen").classList.contains("active")) return;
   loadHole(currentHole, d);
 }
 

@@ -374,7 +374,16 @@ $("createGameBtn").addEventListener("click", async () => {
   gameRef = ref(db, `games/${gameId}`);
 
   const holes = {};
-  for (let i = 0; i < 18; i++) holes[i] = { par: pars[i], strokeIndex: si[i], meters: (teeInfo?.lengths?.[i] || null), strokes: {}, saved: false };
+  for (let i = 0; i < 18; i++) {
+    holes[i] = {
+      par: pars[i],
+      strokeIndex: si[i],
+      meters: (teeInfo?.lengths?.[i] || null),
+      strokes: {},
+      putts: {},
+      saved: false
+    };
+  }
 
   const players = {};
   players[myUid] = {
@@ -520,13 +529,17 @@ function net(gross, phcp, si) { return gross - xtra(phcp, si); }
 function stab(gross, par, phcp, si) { return gross ? Math.max(0, par + 2 - net(gross, phcp, si)) : 0; }
 
 function totals(d, uid) {
-  const h = ph(d, uid); let s = 0, n = 0, p = 0;
-  Object.values(d.holes).forEach(hole => {
+  const h = ph(d, uid); let s = 0, n = 0, p = 0, tP = 0;
+  Object.values(d.holes || {}).forEach(hole => {
     if (!hole.saved) return;
     const g = hole.strokes?.[uid] || 0;
-    s += g; n += net(g, h, hole.strokeIndex); p += stab(g, hole.par, h, hole.strokeIndex);
+    const pt = hole.putts?.[uid] || 0;
+    s += g;
+    n += net(g, h, hole.strokeIndex);
+    p += stab(g, hole.par, h, hole.strokeIndex);
+    tP += pt;
   });
-  return { strokes: s, net: n, pts: p };
+  return { strokes: s, net: n, pts: p, totalPutts: tP };
 }
 
 // ═══════════════════════════════════════════════════════
@@ -593,8 +606,16 @@ function loadHole(n, d) {
   $("holeSI").value = h.strokeIndex;
   $("holeMeters").value = h.meters || "";
 
-  // My strokes
-  $("myStrokesVal").textContent = h.strokes?.[myUid] || 0;
+  // My strokes & putts
+  const myStrokes = h.strokes?.[myUid] || 0;
+  const myPutts = h.putts?.[myUid] || 0;
+  $("myStrokesVal").textContent = myStrokes;
+  $("myPuttsVal").textContent = myPutts;
+
+  // Show/Hide Putt counter
+  const isPutting = d.scoringSystem === "putting";
+  $("puttCounterSection").classList.toggle("hidden", !isPutting);
+
   updateMyBreakdown(d, n);
 
   // Others grid
@@ -603,6 +624,7 @@ function loadHole(n, d) {
   players.forEach(([uid, p], i) => {
     if (uid === myUid) return;
     const g = h.strokes?.[uid] || 0;
+    const pt = h.putts?.[uid] || 0;
     const hcp = ph(d, uid);
     const si = h.strokeIndex, par = h.par;
     const nv = g ? net(g, hcp, si) : "—";
@@ -610,10 +632,16 @@ function loadHole(n, d) {
     const div = document.createElement("div");
     div.className = "other-card";
     div.style.borderTop = `3px solid ${PLAYER_COLORS[i]}`;
+    
+    let detailHTML = `Net ${nv} · Pts ${pv}`;
+    if (d.scoringSystem === 'putting') {
+      detailHTML += ` · Putts ${pt}`;
+    }
+
     div.innerHTML = `<img src="${p.photo || ""}" class="other-photo" style="border-color:${PLAYER_COLORS[i]}"/>
       <div class="other-name">${short(p.name)}</div>
       <div class="other-strokes">${g || "—"}</div>
-      <div class="other-detail">Net ${nv} · Pts ${pv}</div>`;
+      <div class="other-detail">${detailHTML}</div>`;
     grid.appendChild(div);
   });
 
@@ -649,10 +677,15 @@ function updateLeaderboard(d) {
     div.className = "lb-card" + (p.uid === myUid ? " is-me" : "");
     div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
     const medal = rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : `#${rank + 1}`;
+    const isP = d.scoringSystem === 'putting';
+    const primaryScore = isP ? p.totalPutts : p.pts;
+    const primaryLabel = isP ? 'putts' : 'pts';
+    const subLabel = isP ? `${p.strokes} st · ${p.pts} pts` : `pts · ${p.strokes} strokes`;
+
     div.innerHTML = `<div class="lb-rank">${medal}</div>
       <div class="lb-name">${short(p.name)}</div>
-      <div class="lb-pts">${p.pts}</div>
-      <div class="lb-lbl">pts · ${p.strokes} strokes</div>`;
+      <div class="lb-pts">${primaryScore}</div>
+      <div class="lb-lbl">${primaryLabel} · ${subLabel}</div>`;
     bar.appendChild(div);
   });
 }
@@ -660,14 +693,17 @@ function updateLeaderboard(d) {
 // ═══════════════════════════════════════════════════════
 //  STROKE COUNTER & HOLE META
 // ═══════════════════════════════════════════════════════
-$("myPlus").addEventListener("click", () => adj(1));
-$("myMinus").addEventListener("click", () => adj(-1));
+$("myPlus").addEventListener("click", () => adj(1, 'strokes'));
+$("myMinus").addEventListener("click", () => adj(-1, 'strokes'));
+$("myPuttPlus").addEventListener("click", () => adj(1, 'putts'));
+$("myPuttMinus").addEventListener("click", () => adj(-1, 'putts'));
 
-async function adj(delta) {
+async function adj(delta, type) {
   if (!gameData) return;
   const h = gameData.holes[currentHole - 1];
-  const cur = h.strokes?.[myUid] || 0;
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}/strokes`), { [myUid]: Math.max(0, cur + delta) });
+  const cur = (type === 'putts' ? h.putts?.[myUid] : h.strokes?.[myUid]) || 0;
+  const path = type === 'putts' ? 'putts' : 'strokes';
+  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}/${path}`), { [myUid]: Math.max(0, cur + delta) });
 }
 
 $("holePar").addEventListener("change", async () => {
@@ -727,26 +763,33 @@ function badge(g, par, hcp, si) {
 function renderTable(d) {
   if (!d) return;
   const players = getPlayers(d);
+  const isP = d.scoringSystem === 'putting';
 
   // thead
   const thead = $("scorecardHead");
-  thead.innerHTML = `<tr><th>Hole</th><th>Par</th><th>SI</th>${players.map(([, p]) => `<th>${short(p.name)}</th><th>Pts</th>`).join("")}</tr>`;
+  let headerHTML = `<tr><th>Hole</th><th>Par</th><th>SI</th>`;
+  players.forEach(([, p]) => {
+    headerHTML += `<th>${short(p.name)}</th><th>${isP ? 'Putts' : 'Pts'}</th>`;
+  });
+  headerHTML += `</tr>`;
+  thead.innerHTML = headerHTML;
 
   // tbody
   const tbody = $("scorecardBody"); tbody.innerHTML = "";
-  const totP = new Array(players.length).fill(0);
   const totS = new Array(players.length).fill(0);
   const totPts = new Array(players.length).fill(0);
+  const totPutts = new Array(players.length).fill(0);
   let parSum = 0;
 
   Object.values(d.holes).forEach((h, idx) => {
     let cells = `<td><strong>${idx + 1}</strong></td><td>${h.par}</td><td>${h.strokeIndex}</td>`;
-    players.forEach(([uid], pi) => {
+    players.forEach(([uid], i) => {
       const g = h.strokes?.[uid] || 0;
+      const pt = h.putts?.[uid] || 0;
       const hcp = ph(d, uid);
       const pts = g ? stab(g, h.par, hcp, h.strokeIndex) : 0;
-      cells += `<td>${badge(g, h.par, hcp, h.strokeIndex)}</td><td>${g ? pts : "—"}</td>`;
-      if (h.saved) { totS[pi] += g; totPts[pi] += pts; }
+      cells += `<td>${badge(g, h.par, hcp, h.strokeIndex)}</td><td>${isP ? pt : (g ? pts : "—")}</td>`;
+      if (h.saved) { totS[pi = i] += g; totPts[pi = i] += pts; totPutts[pi = i] += pt; }
     });
     if (h.saved) parSum += h.par;
     const tr = document.createElement("tr"); tr.innerHTML = cells; tbody.appendChild(tr);
@@ -754,8 +797,16 @@ function renderTable(d) {
 
   // tfoot
   const saved = Object.values(d.holes).filter(h => h.saved).length;
-  $("scorecardFoot").innerHTML = saved ? `<tr><td>Total</td><td>${parSum}</td><td>—</td>${players.map((_, i) => `<td>${totS[i]}</td><td><strong style="color:var(--gold)">${totPts[i]}</strong></td>`).join("")
-    }</tr>` : "";
+  if (saved) {
+    let footHTML = `<tr><td>Total</td><td>${parSum}</td><td>—</td>`;
+    players.forEach((_, i) => {
+      footHTML += `<td>${totS[i]}</td><td><strong style="color:var(--gold)">${isP ? totPutts[i] : totPts[i]}</strong></td>`;
+    });
+    footHTML += `</tr>`;
+    $("scorecardFoot").innerHTML = footHTML;
+  } else {
+    $("scorecardFoot").innerHTML = "";
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -767,15 +818,24 @@ function showResults(d) {
   $("resultsDate").textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   const players = getPlayers(d);
+  const isPutting = d.scoringSystem === 'putting';
+
   const ranked = players.map(([uid, p], i) => ({ uid, ...p, idx: i, ...totals(d, uid) }))
-    .sort((a, b) => b.pts - a.pts || a.net - b.net);
+    .sort((a, b) => {
+      if (isPutting) return a.totalPutts - b.totalPutts || a.strokes - b.strokes;
+      return b.pts - a.pts || a.net - b.net;
+    });
 
   const winner = ranked[0];
-  $("winnerBanner").textContent = ranked.length > 1 && ranked[0].pts > ranked[1].pts
-    ? `🏆 ${winner.name} wins with ${winner.pts} points!`
-    : ranked.length > 1 && ranked[0].pts === ranked[1].pts
-      ? `⚖️ It's a tie at ${ranked[0].pts} points!`
+  if (isPutting) {
+    $("winnerBanner").textContent = ranked.length > 1 && ranked[0].totalPutts < ranked[1].totalPutts
+      ? `🏆 ${winner.name} wins with only ${winner.totalPutts} putts!`
+      : `🏆 ${winner.name} — ${winner.totalPutts} putts`;
+  } else {
+    $("winnerBanner").textContent = ranked.length > 1 && ranked[0].pts > ranked[1].pts
+      ? `🏆 ${winner.name} wins with ${winner.pts} points!`
       : `🏆 ${winner.name} — ${winner.pts} points`;
+  }
 
   const grid = $("resultsGrid"); grid.innerHTML = "";
   ranked.forEach((p, rank) => {
@@ -783,17 +843,24 @@ function showResults(d) {
     const div = document.createElement("div");
     div.className = "result-card" + (rank === 0 ? " winner" : "");
     div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
+    
+    let statsHTML = `
+      <div class="stat-row"><span>HCP Index</span><strong>${p.hcp}</strong></div>
+      <div class="stat-row"><span>Playing HCP</span><strong>${p.playingHCP}</strong></div>
+      <div class="stat-row"><span>Strokes</span><strong>${p.strokes}</strong></div>
+      <div class="stat-row"><span>Net</span><strong>${p.net}</strong></div>
+      <div class="stat-row ${!isPutting ? 'highlight' : ''}"><span>Stableford</span><strong>${p.pts} pts</strong></div>
+    `;
+    
+    if (isPutting) {
+      statsHTML += `<div class="stat-row highlight"><span>Total Putts</span><strong>${p.totalPutts}</strong></div>`;
+    }
+
     div.innerHTML = `
       <div class="result-rank">${medal}</div>
       <img src="${p.photo || ""}" class="result-photo" style="border-color:${PLAYER_COLORS[p.idx]}"/>
       <h3>${p.name}</h3>
-      <div class="result-stats">
-        <div class="stat-row"><span>HCP Index</span><strong>${p.hcp}</strong></div>
-        <div class="stat-row"><span>Playing HCP</span><strong>${p.playingHCP}</strong></div>
-        <div class="stat-row"><span>Strokes</span><strong>${p.strokes}</strong></div>
-        <div class="stat-row"><span>Net</span><strong>${p.net}</strong></div>
-        <div class="stat-row highlight"><span>Stableford</span><strong>${p.pts} pts</strong></div>
-      </div>`;
+      <div class="results-stats">${statsHTML}</div>`;
     grid.appendChild(div);
   });
 

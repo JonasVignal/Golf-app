@@ -115,6 +115,7 @@
             <option value="stableford">Stableford</option>
             <option value="golfkongerne">👑 Golfkongerne</option>
             <option value="stroke">Stroke Play (Net)</option>
+            <option value="putting">⛳ Putting</option>
             <option value="both">Both</option>
           </select>
         </div>
@@ -218,8 +219,24 @@
                 class="counter-lbl">strokes</span></div>
             <button class="counter-btn" id="myPlus">+</button>
           </div>
-          <div class="score-breakdown"><span>Net: <strong id="myNetScore">—</strong></span><span>Pts: <strong
-                id="myPtsScore">—</strong></span></div>
+          <div class="score-breakdown">
+            <span>Net: <strong id="myNetScore">—</strong></span>
+            <span>Pts: <strong id="myPtsScore">—</strong></span>
+          </div>
+
+          <!-- Putt Counter (Visible only in Putting mode) -->
+          <div id="puttCounterSection" class="hidden" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--bd);">
+            <div class="stroke-card-top" style="margin-bottom: 10px;">
+              <span style="font-size: 0.8rem; color: var(--gold);">PUTTS</span>
+            </div>
+            <div class="stroke-counter">
+              <button class="counter-btn" id="myPuttMinus" style="width: 36px; height: 36px; font-size: 1.1rem;">−</button>
+              <div class="counter-display" style="min-width: 45px;">
+                <span class="counter-val" id="myPuttsVal" style="font-size: 2rem;">0</span>
+              </div>
+              <button class="counter-btn" id="myPuttPlus" style="width: 36px; height: 36px; font-size: 1.1rem;">+</button>
+            </div>
+          </div>
         </div>
       </div>
 

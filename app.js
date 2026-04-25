@@ -167,6 +167,7 @@ const MAX_PLAYERS = 7;
 function calcPH(hcpIdx, slope, rating, par) {
   return Math.round(hcpIdx * (slope / 113) + (rating - par));
 }
+const short = (name) => name ? name.split(" ")[0] : "Player";
 
 
 // ─── State ───────────────────────────────────────────

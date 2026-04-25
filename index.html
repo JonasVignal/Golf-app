@@ -4,331 +4,325 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>GolfMate — Digital Scorecard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="app.js"></script>
+  <title>GolfMate — Multiplayer Scorecard</title>
+  <meta name="description" content="2-7 player golf scorecard with HCP-adjusted Stableford scoring and live sync." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <div id="app">
 
-    <!-- Loading Overlay -->
-    <div id="loadingScreen" class="screen active"
-      style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--g900); z-index: 9999; position: fixed; inset: 0;">
-      <div style="text-align: center; margin-bottom: 30px;">
-        <div class="logo-icon" style="font-size: 60px; animation: pulse 1.5s infinite;">🏌️</div>
-        <div style="font-weight: 700; color: var(--gold); letter-spacing: 2px; margin-top: 10px;">LOADING...</div>
-      </div>
-      <button
-        onclick="document.getElementById('loadingScreen').style.display='none'; document.getElementById('loginScreen').style.display='flex'; document.getElementById('loginScreen').classList.add('active');"
-        style="background: transparent; border: 1px solid rgba(232,245,238,.32); color: rgba(232,245,238,.32); padding: 8px 16px; border-radius: 8px; font-size: 11px; cursor: pointer; font-family:'Outfit', sans-serif;">
-        Stuck? Force Sign-In Screen
-      </button>
-    </div>
-
-    <!-- Background Orbs -->
+  <!-- ══════════ SCREEN 1 — SIGN IN ══════════ -->
+  <div id="loginScreen" class="screen active">
     <div class="bg-orbs">
       <div class="orb orb1"></div>
       <div class="orb orb2"></div>
       <div class="orb orb3"></div>
     </div>
-
-    <!-- ───── SCREEN 1: LOGIN ───── -->
-    <div id="loginScreen" class="screen active">
-      <div class="center-card">
-        <div class="logo">
-          <span class="logo-icon">🏌️‍♂️</span>
-          <h1>GolfMate</h1>
-          <p class="logo-sub">Collaborative 2-7 Player Scorecard</p>
-        </div>
-        <p class="login-desc">Track strokes, putts, and Stableford points in real-time with your flight.</p>
-        <button class="google-btn" id="signInBtn">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18" alt="" />
-          Sign in with Google
-        </button>
-        <p class="login-note" id="loginError"></p>
+    <div class="center-card">
+      <div class="logo">
+        <span class="logo-icon">⛳</span>
+        <h1>GolfMate</h1>
+        <p class="logo-sub">Multiplayer Live Scorecard</p>
       </div>
+      <p class="login-desc">Sign in with your Google account to create or join a round.</p>
+      <button class="google-btn" id="signInBtn">
+        <svg width="20" height="20" viewBox="0 0 18 18">
+          <path fill="#4285F4"
+            d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />
+          <path fill="#34A853"
+            d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" />
+          <path fill="#FBBC05"
+            d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
+          <path fill="#EA4335"
+            d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" />
+        </svg>
+        Sign in with Google
+      </button>
+      <p class="login-note" id="loginError"></p>
     </div>
-
-    <!-- ───── SCREEN 2: LOBBY ───── -->
-    <div id="lobbyScreen" class="screen">
-      <div class="center-card">
-        <div class="user-header">
-          <img id="lobbyPhoto" src="" alt="" class="user-photo" />
-          <div class="user-info">
-            <div id="lobbyName" class="user-name">Player</div>
-            <button class="link-btn" id="lobbySignOut">Sign Out</button>
-          </div>
-        </div>
-
-        <div class="lobby-tabs">
-          <button class="tab-btn active" id="tabCreate">New Game</button>
-          <button class="tab-btn" id="tabJoin">Join Game</button>
-        </div>
-
-        <!-- CREATE TAB -->
-        <div id="createTab" class="tab-panel active">
-          <div class="field-group">
-            <label class="field-label" for="myHCP">Your Handicap (Index)</label>
-            <input type="number" id="myHCP" placeholder="e.g. 18.4" class="field-input" step="0.1" />
-          </div>
-          <div class="field-group">
-            <label class="field-label">Select Course</label>
-            <select id="courseSelect" class="field-input">
-              <option value="skyrup">Skyrup Golf & Sjökrog</option>
-              <option value="albertslund">Albertslund GK (18 holes)</option>
-              <option value="smorum_intermediate">Smørum Intermediate GK</option>
-              <option value="custom">Custom (Add info later)</option>
-            </select>
-          </div>
-          <div class="field-group hidden" id="customCourseGroup">
-            <label class="field-label">Course Name</label>
-            <input type="text" id="customCourseName" placeholder="e.g. Royal Copenhagen GC" class="field-input" />
-          </div>
-          <div class="field-group" id="teeGroup">
-            <label class="field-label">Tee</label>
-            <div class="tee-selector" id="teeSelector"></div>
-          </div>
-          <div class="course-info-card" id="courseInfoCard">
-            <div class="ci-row"><span>Length</span><strong id="ciLength">—</strong></div>
-            <div class="ci-row"><span>Par</span><strong id="ciPar">—</strong></div>
-            <div class="ci-row"><span>Rating</span><strong id="ciRating">—</strong></div>
-            <div class="ci-row"><span>Slope</span><strong id="ciSlope">—</strong></div>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Scoring System</label>
-            <select id="scoringSystem" class="field-input">
-              <option value="stableford">Stableford</option>
-              <option value="golfkongerne">👑 Golfkongerne</option>
-              <option value="stroke">Stroke Play (Net)</option>
-              <option value="both">Both</option>
-            </select>
-          </div>
-          <div class="field-group"
-            style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2);">
-            <label class="field-label" style="margin-bottom: 0;">⛳ Track Putts</label>
-            <label class="switch">
-              <input type="checkbox" id="trackPuttsCreate" />
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <button class="primary-btn" id="createGameBtn">Create Game 🏌️</button>
-        </div>
-
-        <!-- JOIN TAB -->
-        <div id="joinTab" class="tab-panel">
-          <div class="field-group">
-            <label class="field-label">Game Code</label>
-            <input type="text" id="joinCode" placeholder="e.g. ABC123" class="field-input code-input" maxlength="6"
-              autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
-          </div>
-          <div class="field-group"
-            style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2); margin-bottom: 20px;">
-            <label class="field-label" style="margin-bottom: 0;">⛳ Track Putts</label>
-            <label class="switch">
-              <input type="checkbox" id="trackPuttsJoin" />
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <button class="primary-btn" id="joinGameBtn">Join Game ⛳</button>
-          <p class="error-msg" id="joinError"></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ───── SCREEN 3: WAITING ROOM ───── -->
-    <div id="waitingScreen" class="screen">
-      <div class="center-card">
-        <div class="logo small">
-          <h1>Waiting Room</h1>
-        </div>
-        <div class="game-code-display">
-          <p class="code-label">Share code with your flight</p>
-          <div class="code-box" id="displayGameCode">—</div>
-          <button class="copy-btn" id="copyCodeBtn">📋 Copy Code</button>
-        </div>
-        <div class="player-count" id="playerCount">0 / 7 players</div>
-        <div class="player-slots" id="playerSlots"></div>
-        <button class="primary-btn hidden" id="startRoundBtn">Start Round 🏁</button>
-        <p class="start-hint" id="startHint">Waiting for host...</p>
-        <!-- FIX: This was missing and caused the JS crash -->
-        <button class="danger-btn" id="cancelGameBtn">Cancel Game ✕</button>
-      </div>
-    </div>
-
-    <!-- ───── SCREEN 4: SCORECARD ───── -->
-    <div id="scorecardScreen" class="screen">
-      <header class="app-header">
-        <div class="header-left">
-          <span class="logo-icon-sm">⛳</span>
-          <div>
-            <h1 id="headerCourseName">Course Title</h1>
-            <span class="round-date" id="roundDate">Oct 24, 2024</span>
-          </div>
-        </div>
-        <div class="header-right">
-          <div class="player-chips" id="headerChips"></div>
-          <button class="end-btn" id="endRoundBtn">End Round</button>
-        </div>
-      </header>
-
-      <!-- Live leaderboard bar -->
-      <div class="leaderboard-bar" id="leaderboardBar"></div>
-
-      <!-- Hole Nav -->
-      <div class="hole-nav-wrap">
-        <div class="hole-nav" id="holeNav"></div>
-      </div>
-
-      <!-- Current Hole -->
-      <div class="hole-input-section">
-        <div class="hole-header">
-          <button class="nav-arrow" id="prevHole">←</button>
-          <div class="hole-title">
-            <h2 id="currentHoleTitle">Hole 1</h2>
-            <button class="link-btn" id="viewMapBtn"
-              style="display:none; margin-top:4px; font-size:12px; color:var(--gold);">🗺️ View Map</button>
-            <div class="hole-meta">
-              <div class="hole-meta-item">
-                <label>Par</label>
-                <select class="meta-select" id="holePar">
-                  <option value="3">3</option>
-                  <option value="4" selected>4</option>
-                  <option value="5">5</option>
-                </select>
-              </div>
-              <div class="hole-meta-item">
-                <label>SI</label>
-                <select class="meta-select" id="holeSI"></select>
-              </div>
-              <div class="hole-meta-item">
-                <label>Meters</label>
-                <input type="number" class="meta-input" id="holeMeters" placeholder="—" min="50" max="650" />
-              </div>
-            </div>
-          </div>
-          <button class="nav-arrow" id="nextHole">→</button>
-        </div>
-
-        <!-- MY strokes — always first -->
-        <div class="my-stroke-section">
-          <div class="stroke-card my-card">
-            <div class="stroke-card-top">
-              <img id="myCardPhoto" src="" alt="" class="si-photo" />
-              <div><span id="myCardName">You</span><span class="badge-my">Your Score</span></div>
-            </div>
-            <div class="stroke-counter">
-              <button class="counter-btn" id="myMinus">−</button>
-              <div class="counter-display">
-                <span class="counter-val" id="myStrokesVal">0</span>
-                <span class="counter-lbl">strokes</span>
-              </div>
-              <button class="counter-btn" id="myPlus">+</button>
-            </div>
-            <div class="score-breakdown">
-              <span>Net: <strong id="myNetScore">—</strong></span>
-              <span>Pts: <strong id="myPtsScore">—</strong></span>
-            </div>
-
-            <!-- Putt Counter (Visible only if opted in) -->
-            <div id="puttCounterSection" class="hidden"
-              style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--bd);">
-              <div class="stroke-card-top" style="margin-bottom: 10px;">
-                <span style="font-size: 0.8rem; color: var(--gold);">PUTTS</span>
-              </div>
-              <div class="stroke-counter">
-                <button class="counter-btn" id="myPuttMinus"
-                  style="width: 36px; height: 36px; font-size: 1.1rem;">−</button>
-                <div class="counter-display" style="min-width: 45px;">
-                  <span class="counter-val" id="myPuttsVal" style="font-size: 2rem;">0</span>
-                </div>
-                <button class="counter-btn" id="myPuttPlus"
-                  style="width: 36px; height: 36px; font-size: 1.1rem;">+</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Other players' scores — read-only -->
-        <div class="others-grid" id="othersGrid"></div>
-
-        <button class="primary-btn" id="saveHoleBtn" style="margin-top:20px; background:var(--g700);">Next Hole / Save
-          ✅</button>
-
-        <!-- Full scorecard table -->
-        <div class="full-scorecard">
-          <h3 class="section-title">Scorecard Table</h3>
-          <div class="table-wrap">
-            <table class="scorecard-table">
-              <thead id="scorecardHead"></thead>
-              <tbody id="scorecardBody"></tbody>
-              <tfoot id="scorecardFoot"></tfoot>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ───── SCREEN 5: RESULTS ───── -->
-    <div id="resultsScreen" class="screen">
-      <div class="center-card wide">
-        <div class="results-header">
-          <span class="trophy-icon">🏆</span>
-          <h1>Round Complete</h1>
-          <p id="resultsCourse">—</p>
-          <p class="results-date" id="resultsDate">—</p>
-        </div>
-        <div class="winner-banner" id="winnerBanner">🏆 Winner takes all!</div>
-        <div class="results-grid" id="resultsGrid"></div>
-        <button class="primary-btn" id="playAgainBtn">Back to Lobby 🏠</button>
-      </div>
-    </div>
-
-    <!-- ───── GOLFKONGERNE SHOT POPUP ───── -->
-    <!-- FIX: shotPlayerName, shotDetail and shotDismiss were missing -->
-    <div id="shotPopup" class="shot-popup">
-      <div class="shot-popup-card">
-        <div class="shot-emoji">🍻</div>
-        <div class="shot-title">Skål!</div>
-        <div class="shot-player" id="shotPlayerName"></div>
-        <div class="shot-detail" id="shotDetail"></div>
-        <button class="primary-btn" id="shotDismiss">Skål! 🥃</button>
-      </div>
-    </div>
-
-    <!-- ───── MAP POPUP ───── -->
-    <!-- FIX: mapDismiss button now has proper id for JS listener -->
-    <div id="mapPopup" class="shot-popup">
-      <div class="shot-popup-card">
-        <div class="shot-title">Hole Map</div>
-        <img id="mapImage" src="" alt="Hole Map" style="width:100%; border-radius:12px; margin-bottom:12px" />
-        <button class="primary-btn" id="mapDismiss">Close Map</button>
-      </div>
-    </div>
-
   </div>
 
-  <style>
-    @keyframes pulse {
-      0% {
-        transform: scale(1);
-        opacity: 0.8;
-      }
+  <!-- ══════════ SCREEN 2 — LOBBY ══════════ -->
+  <div id="lobbyScreen" class="screen">
+    <div class="bg-orbs">
+      <div class="orb orb1"></div>
+      <div class="orb orb2"></div>
+    </div>
+    <div class="center-card wide">
+      <div class="user-header">
+        <img id="lobbyPhoto" src="" alt="" class="user-photo" />
+        <div>
+          <p class="user-name" id="lobbyName"></p>
+          <button class="link-btn" id="lobbySignOut">Sign out</button>
+        </div>
+      </div>
+      <div class="logo small"><span class="logo-icon">⛳</span>
+        <h1>GolfMate</h1>
+      </div>
 
-      50% {
-        transform: scale(1.1);
-        opacity: 1;
-      }
+      <div class="field-group">
+        <label class="field-label">Your Handicap Index (HCP)</label>
+        <input type="number" id="myHCP" min="0" max="54" step="0.1" placeholder="e.g. 18.4" class="field-input" />
+      </div>
 
-      100% {
-        transform: scale(1);
-        opacity: 0.8;
-      }
-    }
-  </style>
+      <div class="lobby-tabs">
+        <button class="tab-btn active" id="tabCreate">New Game</button>
+        <button class="tab-btn" id="tabJoin">Join Game</button>
+      </div>
+
+      <!-- CREATE TAB -->
+      <div id="createTab" class="tab-panel active">
+        <div class="field-group">
+          <label class="field-label">Course</label>
+          <select id="courseSelect" class="field-input">
+            <option value="skyrup">⛳ Skyrup GK — Sweden</option>
+            <option value="norreskov">⛳ Nørreskov GK — Denmark</option>
+            <option value="huseso">⛳ Husesø GK — Denmark</option>
+            <option value="ormehoj">⛳ Ormehøj GK — Denmark</option>
+            <option value="huseso_norreskov">⛳ Husesø/Nørreskov GK — Denmark</option>
+            <option value="norreskov_huseso">⛳ Nørreskov/Husesø GK — Denmark</option>
+            <option value="huseso_ormehoj">⛳ Husesø/Ormehøj GK — Denmark</option>
+            <option value="norreskov_ormehoj">⛳ Nørreskov/Ormehøj GK — Denmark</option>
+            <option value="ormehoj_huseso">⛳ Ormehøj/Husesø GK — Denmark</option>
+            <option value="ormehoj_norreskov">⛳ Ormehøj/Nørreskov GK — Denmark</option>
+            <option value="smorum_intermediate">⛳ Smørum Intermediate GK — Denmark</option>
+            <option value="albertslund">⛳ Albertslund GK — Denmark</option>
+          </select>
+        </div>
+        <div class="field-group hidden" id="customCourseGroup">
+          <label class="field-label">Course Name</label>
+          <input type="text" id="customCourseName" placeholder="e.g. Royal Copenhagen GC" class="field-input" />
+        </div>
+        <div class="field-group" id="teeGroup">
+          <label class="field-label">Tee</label>
+          <div class="tee-selector" id="teeSelector">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+        <div class="course-info-card" id="courseInfoCard">
+          <div class="ci-row"><span>Length</span><strong id="ciLength">—</strong></div>
+          <div class="ci-row"><span>Par</span><strong id="ciPar">—</strong></div>
+          <div class="ci-row"><span>Rating</span><strong id="ciRating">—</strong></div>
+          <div class="ci-row"><span>Slope</span><strong id="ciSlope">—</strong></div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Scoring System</label>
+          <select id="scoringSystem" class="field-input">
+            <option value="stableford">Stableford</option>
+            <option value="golfkongerne">👑 Golfkongerne</option>
+            <option value="stroke">Stroke Play (Net)</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+        <div class="field-group"
+          style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2);">
+          <label class="field-label" style="margin-bottom: 0;">⛳ Track Putts</label>
+          <label class="switch">
+            <input type="checkbox" id="trackPuttsCreate">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <button class="primary-btn" id="createGameBtn">Create Game 🏌️</button>
+      </div>
+
+      <!-- JOIN TAB -->
+      <div id="joinTab" class="tab-panel">
+        <div class="field-group">
+          <label class="field-label">Game Code</label>
+          <input type="text" id="joinCode" placeholder="e.g. ABC123" class="field-input code-input" maxlength="6"
+            autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
+        </div>
+        <div class="field-group"
+          style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2); margin-bottom: 20px;">
+          <label class="field-label" style="margin-bottom: 0;">⛳ Track Putts</label>
+          <label class="switch">
+            <input type="checkbox" id="trackPuttsJoin">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <button class="primary-btn" id="joinGameBtn">Join Game ⛳</button>
+        <p class="error-msg" id="joinError"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 3 — WAITING ROOM ══════════ -->
+  <div id="waitingScreen" class="screen">
+    <div class="bg-orbs">
+      <div class="orb orb1"></div>
+      <div class="orb orb2"></div>
+    </div>
+    <div class="center-card">
+      <div class="logo small"><span class="logo-icon">⛳</span>
+        <h1>GolfMate</h1>
+      </div>
+      <div class="game-code-display">
+        <p class="code-label">Share this code with your playing partners</p>
+        <div class="code-box" id="displayGameCode">——</div>
+        <button class="copy-btn" id="copyCodeBtn">📋 Copy Code</button>
+      </div>
+      <p class="player-count" id="playerCount">1 / 7 players</p>
+      <div class="player-slots" id="playerSlots">
+        <!-- filled by JS — up to 7 slots -->
+      </div>
+      <button class="primary-btn hidden" id="startRoundBtn">Start Round 🏌️</button>
+      <p class="start-hint" id="startHint">Need at least 2 players to start</p>
+      <button class="danger-btn" id="cancelGameBtn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 4 — SCORECARD ══════════ -->
+  <div id="scorecardScreen" class="screen">
+    <header class="app-header">
+      <div class="header-left">
+        <span class="logo-icon-sm">⛳</span>
+        <div>
+          <h1 id="headerCourseName">Course</h1><span class="round-date" id="roundDate"></span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="player-chips" id="headerChips"></div>
+        <button class="end-btn" id="endRoundBtn">End Round</button>
+      </div>
+    </header>
+
+    <!-- Live leaderboard bar -->
+    <div class="leaderboard-bar" id="leaderboardBar">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- Hole Nav -->
+    <div class="hole-nav-wrap">
+      <div class="hole-nav" id="holeNav"></div>
+    </div>
+
+    <!-- Current Hole -->
+    <div class="hole-input-section">
+      <div class="hole-header">
+        <button class="nav-arrow" id="prevHole">←</button>
+        <div class="hole-title">
+          <h2 id="currentHoleTitle">Hole 1</h2>
+          <button class="link-btn" id="viewMapBtn"
+            style="display:none; margin-top:4px; font-size:12px; color:var(--gold);">🗺️ View Map</button>
+          <div class="hole-meta">
+            <div class="hole-meta-item"><label>Par</label><select class="meta-select" id="holePar">
+                <option value="3">3</option>
+                <option value="4" selected>4</option>
+                <option value="5">5</option>
+              </select></div>
+            <div class="hole-meta-item"><label>SI</label><select class="meta-select" id="holeSI"></select></div>
+            <div class="hole-meta-item"><label>Meters</label><input type="number" class="meta-input" id="holeMeters"
+                placeholder="—" min="50" max="650" /></div>
+          </div>
+        </div>
+        <button class="nav-arrow" id="nextHole">→</button>
+      </div>
+
+      <!-- MY strokes — always first -->
+      <div class="my-stroke-section">
+        <div class="stroke-card my-card">
+          <div class="stroke-card-top"><img id="myCardPhoto" src="" alt="" class="si-photo" />
+            <div><span id="myCardName">You</span><span class="badge-my">Your Score</span></div>
+          </div>
+          <div class="stroke-counter">
+            <button class="counter-btn" id="myMinus">−</button>
+            <div class="counter-display"><span class="counter-val" id="myStrokesVal">0</span><span
+                class="counter-lbl">strokes</span></div>
+            <button class="counter-btn" id="myPlus">+</button>
+          </div>
+          <div class="score-breakdown">
+            <span>Net: <strong id="myNetScore">—</strong></span>
+            <span>Pts: <strong id="myPtsScore">—</strong></span>
+          </div>
+
+          <!-- Putt Counter (Visible only in Putting mode) -->
+          <div id="puttCounterSection" class="hidden"
+            style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--bd);">
+            <div class="stroke-card-top" style="margin-bottom: 10px;">
+              <span style="font-size: 0.8rem; color: var(--gold);">PUTTS</span>
+            </div>
+            <div class="stroke-counter">
+              <button class="counter-btn" id="myPuttMinus"
+                style="width: 36px; height: 36px; font-size: 1.1rem;">−</button>
+              <div class="counter-display" style="min-width: 45px;">
+                <span class="counter-val" id="myPuttsVal" style="font-size: 2rem;">0</span>
+              </div>
+              <button class="counter-btn" id="myPuttPlus"
+                style="width: 36px; height: 36px; font-size: 1.1rem;">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other players' scores — read-only -->
+      <div class="others-grid" id="othersGrid">
+        <!-- filled by JS -->
+      </div>
+
+      <button class="primary-btn" id="saveHoleBtn">Save Hole & Continue →</button>
+    </div>
+
+    <!-- Full Table -->
+    <div class="full-scorecard">
+      <h2 class="section-title">Full Scorecard</h2>
+      <div class="table-wrap">
+        <table class="scorecard-table" id="scorecardTable">
+          <thead id="scorecardHead">
+            <tr></tr>
+          </thead>
+          <tbody id="scorecardBody"></tbody>
+          <tfoot id="scorecardFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 5 — RESULTS ══════════ -->
+  <div id="resultsScreen" class="screen">
+    <div class="bg-orbs">
+      <div class="orb orb1"></div>
+      <div class="orb orb2"></div>
+    </div>
+    <div class="center-card wide">
+      <div class="results-header">
+        <span class="trophy-icon">🏆</span>
+        <h1>Round Complete!</h1>
+        <p id="resultsCourse"></p>
+        <p id="resultsDate" class="results-date"></p>
+      </div>
+      <div class="winner-banner" id="winnerBanner"></div>
+      <div class="results-grid" id="resultsGrid">
+        <!-- filled by JS -->
+      </div>
+      <button class="primary-btn" id="playAgainBtn">Play Again 🏌️</button>
+    </div>
+  </div>
+
+  <!-- ══════════ SHOT POPUP (Golfkongerne) ══════════ -->
+  <div id="shotPopup" class="shot-popup">
+    <div class="shot-popup-card">
+      <div class="shot-emoji">🍻</div>
+      <h2 class="shot-title">Giv et shot til en makker!</h2>
+      <p class="shot-player" id="shotPlayerName"></p>
+      <p class="shot-detail" id="shotDetail"></p>
+      <button class="primary-btn" id="shotDismiss">Skål! 🥃</button>
+    </div>
+  </div>
+  <!-- ══════════ MAP POPUP ══════════ -->
+  <div id="mapPopup" class="shot-popup">
+    <div class="shot-popup-card" style="padding:15px; max-width:95vw;">
+      <h2 class="shot-title" style="margin-bottom:10px;">Course Map</h2>
+      <img id="mapImage" src="" style="width:100%; border-radius:10px; max-height:60vh; object-fit:contain;"
+        alt="Map" />
+      <button class="primary-btn" id="mapDismiss" style="margin-top:15px;">Close</button>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
 </body>
 
 </html>

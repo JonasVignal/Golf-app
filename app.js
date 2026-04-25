@@ -467,23 +467,8 @@ $("copyCodeBtn").addEventListener("click", () => {
   });
 });
 
-$("cancelGameBtn").addEventListener("click", async () => {
-  if (!gameData || !gameRef) return;
-  
-  const isHost = myUid === gameData.hostUid;
-  if (isHost) {
-    if (confirm("Cancel round for everyone?")) {
-      await update(gameRef, { status: "cancelled" });
-    }
-  } else {
-    // Just leave as player
-    if (confirm("Leave this game?")) {
-      await update(ref(db, `games/${gameId}/players/${myUid}`), null);
-      cleanup();
-      showLobby(currentUser);
-    }
-  }
-});
+// Event listener moved to initListeners() at the bottom
+
 
 $("startRoundBtn").addEventListener("click", async () => {
   if (gameRef) await update(gameRef, { status: "active" });
@@ -1041,7 +1026,7 @@ function initListeners() {
       if (confirm("Cancel round for everyone?")) await update(gameRef, { status: "cancelled" });
     } else {
       if (confirm("Leave this game?")) {
-        await update(ref(db, `games/${gameId}/players/${myUid}`), null);
+        await set(ref(db, `games/${gameId}/players/${myUid}`), null);
         cleanup(); showLobby(currentUser);
       }
     }

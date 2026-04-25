@@ -234,11 +234,8 @@ if ($("lobbySignOut")) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  AUTH
+//  AUTH CYCLE
 // ═══════════════════════════════════════════════════════
-const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
-
 onAuthStateChanged(auth, user => {
   currentUser = user; myUid = user?.uid || null;
   if (user) {
@@ -266,9 +263,9 @@ getRedirectResult(auth).then((result) => {
 
 function handleAuthError(e) {
   const msg = {
-    "auth/unauthorized-domain": "Unauthorized Domain! Add this site to Firebase Auth settings.",
-    "auth/operation-not-allowed": "Google login is disabled.",
-    "auth/network-request-failed": "Network error. Check connection.",
+    "auth/unauthorized-domain": "Unauthorized Domain! Add site to Firebase.",
+    "auth/operation-not-allowed": "Google login disabled.",
+    "auth/network-request-failed": "Network error.",
     "auth/popup-blocked": "Popup blocked! Redirecting...",
   };
   const errEl = $("loginError");

@@ -251,19 +251,28 @@ function hideLoginError() {
 
 $("signInBtn").addEventListener("click", () => {
   const errorNote = $("loginError");
-  errorNote.textContent = "Connecting to Google...";
+  errorNote.textContent = "Signing in...";
   
-  // Try popup first (best for desktop and modern mobile Safari)
-  signInWithPopup(auth, googleProvider)
-    .then(() => hideLoginError())
-    .catch((e) => {
-      if (e.code === "auth/popup-blocked" || e.code === "auth/cancelled-popup-request" || e.code === "auth/popup-closed-by-user") {
-        errorNote.textContent = "Redirecting for sign-in...";
-        signInWithRedirect(auth, googleProvider).catch(handleAuthError);
-      } else {
-        handleAuthError(e);
-      }
-    });
+  // Detection for mobile/tablet or in-app browsers
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isInApp = /FBAN|FBAV|Instagram|LBBROWSER|Line/i.test(navigator.userAgent);
+
+  if (isMobile || isInApp) {
+    // Redirect is significantly more reliable on mobile Safari and Instagram/FB browsers
+    signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+  } else {
+    // Popup is fine for desktop
+    signInWithPopup(auth, googleProvider)
+      .then(() => hideLoginError())
+      .catch((e) => {
+        if (e.code === "auth/popup-blocked") {
+          errorNote.textContent = "Popup blocked! Redirecting...";
+          signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+        } else {
+          handleAuthError(e);
+        }
+      });
+  }
 });
 
 $("lobbySignOut").addEventListener("click", () => signOut(auth));

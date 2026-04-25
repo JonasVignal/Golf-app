@@ -207,14 +207,30 @@ getRedirectResult(auth).then((result) => {
     myUid = result.user.uid;
     showLobby(result.user);
   }
-  isInitialCheck = false;
-  $("loadingScreen").style.display = "none";
+  finishInitialCheck();
 }).catch((e) => {
   console.error("Redirect Result Error:", e);
   handleAuthError(e);
+  finishInitialCheck();
+});
+
+// Fail-safe: If redirect result takes too long, just show whatever state we have
+setTimeout(() => {
+  if (isInitialCheck) {
+    console.log("Auth timeout reached - forcing check...");
+    finishInitialCheck();
+  }
+}, 3500);
+
+function finishInitialCheck() {
+  if (!isInitialCheck) return;
   isInitialCheck = false;
   $("loadingScreen").style.display = "none";
-});
+  if (!currentUser) {
+    cleanup();
+    show("login");
+  }
+}
 
 function hideLoginError() {
   const el = $("loginError");

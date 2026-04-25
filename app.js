@@ -167,10 +167,10 @@ const MAX_PLAYERS = 7;
 function calcPH(hcpIdx, slope, rating, par) {
   return Math.round(hcpIdx * (slope / 113) + (rating - par));
 }
-function short(n) { 
-  if (!n) return "Player"; 
-  const p = n.trim().split(" "); 
-  return p.length >= 2 ? p[0] + " " + p[1][0] + "." : p[0]; 
+function short(n) {
+  if (!n) return "Player";
+  const p = n.trim().split(" ");
+  return p.length >= 2 ? p[0] + " " + p[1][0] + "." : p[0];
 }
 
 
@@ -215,7 +215,7 @@ if ($("signInBtn")) {
   $("signInBtn").addEventListener("click", () => {
     const errorNote = $("loginError");
     if (errorNote) errorNote.textContent = "Connecting to Google...";
-    
+
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {
       signInWithRedirect(auth, googleProvider).catch(handleAuthError);
@@ -244,14 +244,14 @@ onAuthStateChanged(auth, user => {
   currentUser = user; myUid = user?.uid || null;
   if (user) {
     const sid = localStorage.getItem("gm_gid");
-    if (sid) { 
-      gameId = sid; gameRef = ref(db, `games/${gameId}`); 
-      attachListener(); 
+    if (sid) {
+      gameId = sid; gameRef = ref(db, `games/${gameId}`);
+      attachListener();
     } else {
       showLobby(user);
     }
   } else {
-    cleanup(); show("login"); 
+    cleanup(); show("login");
   }
 });
 
@@ -427,7 +427,7 @@ async function joinGame() {
   if (!snap.exists()) { if (errEl) errEl.textContent = "Game not found."; return; }
   const d = snap.val();
   if (d.status !== "waiting") { if (errEl) errEl.textContent = "Game already started."; return; }
-  
+
   const players = d.players || {};
   const pCount = Object.keys(players).length;
   if (pCount >= MAX_PLAYERS) { if (errEl) errEl.textContent = "Game is full (7 players max)."; return; }
@@ -999,7 +999,7 @@ $("shotDismiss").addEventListener("click", () => {
 // ═══════════════════════════════════════════════════════
 function initListeners() {
   const safeAdd = (id, evt, fn) => { const el = $(id); if (el) el.addEventListener(evt, fn); };
-  
+
   safeAdd("tabCreate", "click", () => {
     $("tabCreate").classList.add("active"); $("tabJoin").classList.remove("active");
     $("createTab").classList.add("active"); $("joinTab").classList.remove("active");
@@ -1008,18 +1008,18 @@ function initListeners() {
     $("tabJoin").classList.add("active"); $("tabCreate").classList.remove("active");
     $("joinTab").classList.add("active"); $("createTab").classList.remove("active");
   });
-  
+
   safeAdd("courseSelect", "change", () => {
     const k = $("courseSelect").value;
     if (k !== "custom" && COURSES[k]) selectedTee = Object.keys(COURSES[k].tees)[0];
     updateCourseUI();
   });
-  
+
   safeAdd("createGameBtn", "click", createGame);
   safeAdd("joinGameBtn", "click", joinGame);
   safeAdd("prevHole", "click", () => { if (currentHole > 1) { currentHole--; renderScorecard(); } });
   safeAdd("nextHole", "click", () => { if (currentHole < 18) { currentHole++; renderScorecard(); } });
-  
+
   safeAdd("cancelGameBtn", "click", async () => {
     if (!gameData || !gameRef) return;
     if (myUid === gameData.hostUid) {
@@ -1031,7 +1031,7 @@ function initListeners() {
       }
     }
   });
-  
+
   safeAdd("startRoundBtn", "click", async () => {
     if (gameRef) await update(gameRef, { status: "active" });
   });
@@ -1042,7 +1042,7 @@ function initListeners() {
   });
   safeAdd("mapDismiss", "click", () => $("mapPopup").classList.remove("active"));
   safeAdd("mapPopup", "click", (e) => { if (e.target === $("mapPopup")) $("mapPopup").classList.remove("active"); });
-  
+
   safeAdd("shotPopup", "click", (e) => {
     if (e.target === $("shotPopup")) {
       $("shotPopup").classList.remove("active");

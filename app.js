@@ -181,8 +181,19 @@ let seenSavedHoles = null;
 let seenMapHoles = new Set();
 
 const $ = id => document.getElementById(id);
-const screens = { login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") };
-function show(name) { Object.values(screens).forEach(s => s.classList.remove("active")); screens[name].classList.add("active"); }
+const screens = { 
+  login: $("loginScreen"), 
+  lobby: $("lobbyScreen"), 
+  waiting: $("waitingScreen"), 
+  scorecard: $("scorecardScreen"), 
+  results: $("resultsScreen") 
+};
+
+function show(name) { 
+  Object.entries(screens).forEach(([k, s]) => {
+    if (s) s.classList.toggle("active", k === name);
+  });
+}
 
 // Global error handlers for mobile debugging
 window.addEventListener('error', (e) => {
@@ -225,7 +236,8 @@ setTimeout(() => {
 function finishInitialCheck() {
   if (!isInitialCheck) return;
   isInitialCheck = false;
-  $("loadingScreen").style.display = "none";
+  const ls = $("loadingScreen");
+  if (ls) ls.style.display = "none";
   if (!currentUser) {
     cleanup();
     show("login");
@@ -288,14 +300,17 @@ onAuthStateChanged(auth, user => {
 
   if (user) {
     // Hide loading screen if it's still there
-    $("loadingScreen").style.display = "none";
+    const ls = $("loadingScreen");
+    if (ls) ls.style.display = "none";
+    
     const sid = localStorage.getItem("gm_gid");
     if (sid) { gameId = sid; gameRef = ref(db, `games/${gameId}`); attachListener(); return; }
     showLobby(user);
   } else {
     // ONLY show login if we are NOT in the middle of a redirect check
     if (!isInitialCheck) {
-      $("loadingScreen").style.display = "none";
+      const ls = $("loadingScreen");
+      if (ls) ls.style.display = "none";
       cleanup(); 
       show("login"); 
     }

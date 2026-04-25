@@ -199,6 +199,11 @@ window.addEventListener('unhandledrejection', (e) => {
   if (errEl) errEl.textContent = `Promise Error: ${e.reason}`;
 });
 
+window.forceLogin = () => {
+  const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
+  show("login");
+};
+
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
@@ -337,10 +342,11 @@ $("courseSelect").addEventListener("change", () => {
 });
 
 function updateCourseUI() {
-  const k = $("courseSelect").value, known = k !== "custom";
-  $("customCourseGroup").classList.toggle("hidden", known);
-  $("teeGroup").classList.toggle("hidden", !known);
-  $("courseInfoCard").style.display = known ? "grid" : "none";
+  const kEl = $("courseSelect"); if (!kEl) return;
+  const k = kEl.value, known = k !== "custom";
+  const cg = $("customCourseGroup"); if (cg) cg.classList.toggle("hidden", known);
+  const tg = $("teeGroup"); if (tg) tg.classList.toggle("hidden", !known);
+  const cic = $("courseInfoCard"); if (cic) cic.style.display = known ? "grid" : "none";
   if (known) {
     const c = COURSES[k];
 
@@ -366,12 +372,12 @@ function updateCourseUI() {
 }
 function refreshCI(ck, tee) {
   const c = COURSES[ck]; if (!c) return;
-  const t = c.tees[tee];
-  if (!t) return;
-  $("ciLength").textContent = t.length + " m";
-  $("ciPar").textContent = c.par;
-  $("ciRating").textContent = t.rating;
-  $("ciSlope").textContent = t.slope;
+  const t = c.tees[tee]; if (!t) return;
+  const elL = $("ciLength"), elP = $("ciPar"), elR = $("ciRating"), elS = $("ciSlope");
+  if (elL) elL.textContent = t.length + " m";
+  if (elP) elP.textContent = c.par;
+  if (elR) elR.textContent = t.rating;
+  if (elS) elS.textContent = t.slope;
 }
 
 // ═══════════════════════════════════════════════════════

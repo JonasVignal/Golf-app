@@ -23,7 +23,7 @@
         <div class="logo-icon" style="font-size: 60px; animation: pulse 1.5s infinite;">🏌️</div>
         <div style="font-weight: 700; color: var(--gold); letter-spacing: 2px; margin-top: 10px;">LOADING...</div>
       </div>
-      <button onclick="document.getElementById('loadingScreen').style.display='none'; document.getElementById('loginScreen').style.display='flex'; document.getElementById('loginScreen').classList.add('active');" 
+      <button onclick="window.forceLogin()" 
               style="background: transparent; border: 1px solid rgba(232,245,238,.32); color: rgba(232,245,238,.32); padding: 8px 16px; border-radius: 8px; font-size: 11px; cursor: pointer; font-family:'Outfit', sans-serif;">
         Stuck? Force Sign-In Screen
       </button>

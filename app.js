@@ -3,11 +3,27 @@
 //  Firebase Realtime Database · WHS Playing Handicap
 // ═══════════════════════════════════════════════════════
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, signInAnonymously, updateProfile }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, set, get, update, onValue, off, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+// Updated Imports (Top of file)
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+  getRedirectResult, signOut, onAuthStateChanged,
+  setPersistence, browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// Force Persistence on Start
+setPersistence(auth, browserLocalPersistence);
+
+// Explicitly handle the return from Google
+getRedirectResult(auth).then((result) => {
+  if (result?.user) {
+    console.log("Login successful after redirect");
+    showLobby(result.user);
+  }
+}).catch((e) => {
+  if (e.code === "auth/unauthorized-domain") {
+    $("loginError").textContent = "Domain not authorized! Add this URL in Firebase -> Auth -> Authorized domains.";
+  }
+});
 
 // ─── Firebase ────────────────────────────────────────
 const firebaseConfig = {

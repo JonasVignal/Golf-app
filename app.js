@@ -181,13 +181,24 @@ let selectedTee = "yellow";
 let seenSavedHoles = null;
 let seenMapHoles = new Set();
 
+// Global Helper
 const $ = id => document.getElementById(id);
-const screens = { 
-  login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") 
-};
-function show(name) { 
-  Object.entries(screens).forEach(([k, s]) => { if (s) s.classList.toggle("active", k === name); });
+
+// Safe show function (no dependencies)
+function show(name) {
+  const ids = ["login", "lobby", "waiting", "scorecard", "results"];
+  ids.forEach(id => {
+    const el = $(id + "Screen");
+    if (el) el.classList.toggle("active", id === name);
+  });
 }
+
+// Global Recovery Function (Defined early)
+window.forceLogin = () => {
+  console.warn("Manual recovery triggered.");
+  const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
+  show("login");
+};
 
 // Global error handlers for mobile debugging
 window.addEventListener('error', (e) => {
@@ -199,11 +210,6 @@ window.addEventListener('unhandledrejection', (e) => {
   if (errEl) errEl.textContent = `Promise Error: ${e.reason}`;
 });
 
-window.forceLogin = () => {
-  const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
-  show("login");
-};
-
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
@@ -213,7 +219,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 // 1. Set up observer FIRST
 onAuthStateChanged(auth, user => {
-  console.log("Auth State Changed:", user ? "User Logged In" : "No User");
+  console.log("Auth State:", user ? "In" : "Out");
   currentUser = user; myUid = user?.uid || null;
 
   if (user) {
@@ -225,9 +231,9 @@ onAuthStateChanged(auth, user => {
     } else {
       showLobby(user);
     }
-    isInitialCheck = false; // Auth found, we are done checking
+    isInitialCheck = false;
   } else {
-    // If no user yet, we might be waiting for redirect result
+    // If no user yet, only show login if we checked redirects
     if (!isInitialCheck) {
       const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
       cleanup(); show("login"); 
@@ -259,6 +265,7 @@ setTimeout(() => {
 
 function finishInitialCheck(source) {
   if (!isInitialCheck) return;
+  console.log("Check finished:", source);
   isInitialCheck = false;
   const ls = $("loadingScreen"); if (ls) ls.style.display = "none";
   if (!currentUser) show("login");

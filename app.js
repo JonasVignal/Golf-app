@@ -181,12 +181,32 @@ let selectedTee = "yellow";
 let seenSavedHoles = null;
 let seenMapHoles = new Set();
 
-// 1. ATTACH LISTENERS IMMEDIATELY
+// Global Helper
 const $ = id => document.getElementById(id);
+
+// Safe show function
+function show(name) {
+  const ids = ["login", "lobby", "waiting", "scorecard", "results"];
+  ids.forEach(id => {
+    const el = $(id + "Screen");
+    if (el) el.classList.toggle("active", id === name);
+  });
+}
+
+// Global error handlers
+window.addEventListener('error', (e) => {
+  const errEl = $("loginError");
+  if (errEl) errEl.textContent = `JS Error: ${e.message}`;
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const errEl = $("loginError");
+  if (errEl) errEl.textContent = `Promise Error: ${e.reason}`;
+});
+
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// Sign-in button moved to the top for absolute reliability
+// 1. ATTACH LISTENERS
 if ($("signInBtn")) {
   $("signInBtn").addEventListener("click", () => {
     const errorNote = $("loginError");
@@ -209,33 +229,9 @@ if ($("signInBtn")) {
   });
 }
 
-const ids = ["lobbySignOut", "tabCreate", "tabJoin", "courseSelect", "createGameBtn", "joinGameBtn", "prevHole", "nextHole", "viewMapBtn", "mapDismiss", "mapPopup", "cancelGameBtn", "startRoundBtn"];
-ids.forEach(id => {
-  const el = $(id);
-  if (el && id === "lobbySignOut") el.addEventListener("click", () => signOut(auth));
-});
-
-// Global Helper
-const $ = id => document.getElementById(id);
-
-// Safe show function
-function show(name) {
-  const ids = ["login", "lobby", "waiting", "scorecard", "results"];
-  ids.forEach(id => {
-    const el = $(id + "Screen");
-    if (el) el.classList.toggle("active", id === name);
-  });
+if ($("lobbySignOut")) {
+  $("lobbySignOut").addEventListener("click", () => signOut(auth));
 }
-
-// Global error handlers for mobile debugging
-window.addEventListener('error', (e) => {
-  const errEl = $("loginError");
-  if (errEl) errEl.textContent = `JS Error: ${e.message} at ${e.filename}:${e.lineno}`;
-});
-window.addEventListener('unhandledrejection', (e) => {
-  const errEl = $("loginError");
-  if (errEl) errEl.textContent = `Promise Error: ${e.reason}`;
-});
 
 // ═══════════════════════════════════════════════════════
 //  AUTH
@@ -1009,25 +1005,62 @@ $("shotDismiss").addEventListener("click", () => {
   setTimeout(processPopupQueue, 400);
 });
 
-// Close popup on overlay click too
-$("shotPopup").addEventListener("click", (e) => {
-  if (e.target === $("shotPopup")) {
-    $("shotPopup").classList.remove("active");
-    setTimeout(processPopupQueue, 400);
-  }
-});
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+function initListeners() {
+  const safeAdd = (id, evt, fn) => { const el = $(id); if (el) el.addEventListener(evt, fn); };
+  
+  safeAdd("tabCreate", "click", () => {
+    $("tabCreate").classList.add("active"); $("tabJoin").classList.remove("active");
+    $("createTab").classList.add("active"); $("joinTab").classList.remove("active");
+  });
+  safeAdd("tabJoin", "click", () => {
+    $("tabJoin").classList.add("active"); $("tabCreate").classList.remove("active");
+    $("joinTab").classList.add("active"); $("createTab").classList.remove("active");
+  });
+  
+  safeAdd("courseSelect", "change", () => {
+    const k = $("courseSelect").value;
+    if (k !== "custom" && COURSES[k]) selectedTee = Object.keys(COURSES[k].tees)[0];
+    updateCourseUI();
+  });
+  
+  safeAdd("createGameBtn", "click", createGame);
+  safeAdd("joinGameBtn", "click", joinGame);
+  safeAdd("prevHole", "click", () => { if (currentHole > 1) { currentHole--; renderScorecard(); } });
+  safeAdd("nextHole", "click", () => { if (currentHole < 18) { currentHole++; renderScorecard(); } });
+  
+  safeAdd("cancelGameBtn", "click", async () => {
+    if (!gameData || !gameRef) return;
+    if (myUid === gameData.hostUid) {
+      if (confirm("Cancel round for everyone?")) await update(gameRef, { status: "cancelled" });
+    } else {
+      if (confirm("Leave this game?")) {
+        await update(ref(db, `games/${gameId}/players/${myUid}`), null);
+        cleanup(); showLobby(currentUser);
+      }
+    }
+  });
+  
+  safeAdd("startRoundBtn", "click", async () => {
+    if (gameRef) await update(gameRef, { status: "active" });
+  });
 
-// Map listeners
-$("viewMapBtn")?.addEventListener("click", () => {
-  $("mapImage").src = `Skyrup_${currentHole}.png`;
-  $("mapPopup").classList.add("active");
-});
-$("mapDismiss")?.addEventListener("click", () => {
-  $("mapPopup").classList.remove("active");
-});
-$("mapPopup")?.addEventListener("click", (e) => {
-  if (e.target === $("mapPopup")) $("mapPopup").classList.remove("active");
-});
+  safeAdd("viewMapBtn", "click", () => {
+    $("mapImage").src = `Skyrup_${currentHole}.png`;
+    $("mapPopup").classList.add("active");
+  });
+  safeAdd("mapDismiss", "click", () => $("mapPopup").classList.remove("active"));
+  safeAdd("mapPopup", "click", (e) => { if (e.target === $("mapPopup")) $("mapPopup").classList.remove("active"); });
+  
+  safeAdd("shotPopup", "click", (e) => {
+    if (e.target === $("shotPopup")) {
+      $("shotPopup").classList.remove("active");
+      setTimeout(processPopupQueue, 400);
+    }
+  });
+}
 
-// Init
+initListeners();
 updateCourseUI();

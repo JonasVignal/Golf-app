@@ -167,7 +167,11 @@ const MAX_PLAYERS = 7;
 function calcPH(hcpIdx, slope, rating, par) {
   return Math.round(hcpIdx * (slope / 113) + (rating - par));
 }
-const short = (name) => name ? name.split(" ")[0] : "Player";
+function short(n) { 
+  if (!n) return "Player"; 
+  const p = n.trim().split(" "); 
+  return p.length >= 2 ? p[0] + " " + p[1][0] + "." : p[0]; 
+}
 
 
 // ─── State ───────────────────────────────────────────
@@ -892,7 +896,7 @@ $("playAgainBtn").addEventListener("click", () => { cleanup(); currentHole = 1; 
 //  HELPERS
 // ═══════════════════════════════════════════════════════
 function genCode() { const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return Array.from({ length: 6 }, () => c[Math.floor(Math.random() * c.length)]).join(""); }
-function short(n) { if (!n) return "Player"; const p = n.trim().split(" "); return p.length >= 2 ? p[0] + " " + p[1][0] + "." : p[0]; }
+
 
 // ═══════════════════════════════════════════════════════
 //  GOLFKONGERNE — SHOT POPUP

@@ -167,7 +167,6 @@ const MAX_PLAYERS = 7;
 function calcPH(hcpIdx, slope, rating, par) {
   return Math.round(hcpIdx * (slope / 113) + (rating - par));
 }
-const short = (name) => name ? name.split(" ")[0] : "Player";
 
 
 // ─── State ───────────────────────────────────────────
@@ -182,19 +181,8 @@ let seenSavedHoles = null;
 let seenMapHoles = new Set();
 
 const $ = id => document.getElementById(id);
-const screens = { 
-  login: $("loginScreen"), 
-  lobby: $("lobbyScreen"), 
-  waiting: $("waitingScreen"), 
-  scorecard: $("scorecardScreen"), 
-  results: $("resultsScreen") 
-};
-
-function show(name) { 
-  Object.entries(screens).forEach(([k, s]) => {
-    if (s) s.classList.toggle("active", k === name);
-  });
-}
+const screens = { login: $("loginScreen"), lobby: $("lobbyScreen"), waiting: $("waitingScreen"), scorecard: $("scorecardScreen"), results: $("resultsScreen") };
+function show(name) { Object.values(screens).forEach(s => s.classList.remove("active")); screens[name].classList.add("active"); }
 
 // Global error handlers for mobile debugging
 window.addEventListener('error', (e) => {
@@ -237,8 +225,7 @@ setTimeout(() => {
 function finishInitialCheck() {
   if (!isInitialCheck) return;
   isInitialCheck = false;
-  const ls = $("loadingScreen");
-  if (ls) ls.style.display = "none";
+  $("loadingScreen").style.display = "none";
   if (!currentUser) {
     cleanup();
     show("login");
@@ -269,7 +256,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 $("signInBtn").addEventListener("click", () => {
   const errorNote = $("loginError");
   errorNote.textContent = "Opening Google...";
-  
+
   // Mobile browsers (especially Safari/iOS) and in-app browsers (IG/FB) 
   // work MUCH better with Redirect than Popup.
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -301,19 +288,16 @@ onAuthStateChanged(auth, user => {
 
   if (user) {
     // Hide loading screen if it's still there
-    const ls = $("loadingScreen");
-    if (ls) ls.style.display = "none";
-    
+    $("loadingScreen").style.display = "none";
     const sid = localStorage.getItem("gm_gid");
     if (sid) { gameId = sid; gameRef = ref(db, `games/${gameId}`); attachListener(); return; }
     showLobby(user);
   } else {
     // ONLY show login if we are NOT in the middle of a redirect check
     if (!isInitialCheck) {
-      const ls = $("loadingScreen");
-      if (ls) ls.style.display = "none";
-      cleanup(); 
-      show("login"); 
+      $("loadingScreen").style.display = "none";
+      cleanup();
+      show("login");
     }
   }
 });
@@ -682,7 +666,7 @@ function loadHole(n, d) {
     const div = document.createElement("div");
     div.className = "other-card";
     div.style.borderTop = `3px solid ${PLAYER_COLORS[i]}`;
-    
+
     let detailHTML = `Net ${nv} · Pts ${pv}`;
     if (d.players[uid]?.trackPutts) {
       detailHTML += ` · Putts ${pt}`;
@@ -890,7 +874,7 @@ function showResults(d) {
     const div = document.createElement("div");
     div.className = "result-card" + (rank === 0 ? " winner" : "");
     div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
-    
+
     let statsHTML = `
       <div class="stat-row"><span>HCP Index</span><strong>${p.hcp}</strong></div>
       <div class="stat-row"><span>Playing HCP</span><strong>${p.playingHCP}</strong></div>
@@ -898,7 +882,7 @@ function showResults(d) {
       <div class="stat-row"><span>Net</span><strong>${p.net}</strong></div>
       <div class="stat-row highlight"><span>Stableford</span><strong>${p.pts} pts</strong></div>
     `;
-    
+
     if (p.trackPutts) {
       statsHTML += `<div class="stat-row highlight" style="background:rgba(240,192,64,.1)"><span>Total Putts</span><strong>${p.totalPutts}</strong></div>`;
     }

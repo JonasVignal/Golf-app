@@ -441,6 +441,7 @@ async function joinGame() {
   const ph = ti ? calcPH(hcpIdx, ti.slope, ti.rating, ti.par) : Math.round(hcpIdx);
 
   gameId = code;
+  gameRef = ref(db, `games/${gameId}`);
   const trackPutts = $("trackPuttsJoin")?.checked || false;
 
   await update(ref(db, `games/${gameId}/players/${myUid}`), {
@@ -449,6 +450,7 @@ async function joinGame() {
   });
 
   localStorage.setItem("gm_gid", gameId);
+  showWaiting();
   attachListener();
 }
 

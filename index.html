@@ -121,7 +121,7 @@
         <div class="field-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2);">
           <label class="field-label" style="margin-bottom: 0;">⛳ Track Putts</label>
           <label class="switch">
-            <input type="checkbox" id="trackPutts">
+            <input type="checkbox" id="trackPuttsCreate">
             <span class="slider round"></span>
           </label>
         </div>
@@ -134,6 +134,13 @@
           <label class="field-label">Game Code</label>
           <input type="text" id="joinCode" placeholder="e.g. ABC123" class="field-input code-input" maxlength="6"
             autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
+        </div>
+        <div class="field-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--sf3); padding: 12px; border-radius: var(--rs); border: 1px solid var(--bd2); margin-bottom: 20px;">
+          <label class="field-label" style="margin-bottom: 0;">⛳ Track Putts</label>
+          <label class="switch">
+            <input type="checkbox" id="trackPuttsJoin">
+            <span class="slider round"></span>
+          </label>
         </div>
         <button class="primary-btn" id="joinGameBtn">Join Game ⛳</button>
         <p class="error-msg" id="joinError"></p>

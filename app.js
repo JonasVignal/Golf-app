@@ -369,7 +369,7 @@ $("createGameBtn").addEventListener("click", async () => {
     pars = DEF_PARS; si = DEF_SI;
   }
   const ph = teeInfo ? calcPH(hcpIdx, teeInfo.slope, teeInfo.rating, teeInfo.par) : Math.round(hcpIdx);
-  const trackPutts = $("trackPutts").checked;
+  const trackPutts = $("trackPuttsCreate").checked;
 
   gameId = genCode();
   gameRef = ref(db, `games/${gameId}`);
@@ -389,11 +389,11 @@ $("createGameBtn").addEventListener("click", async () => {
   const players = {};
   players[myUid] = {
     name: currentUser.displayName || "Player 1", photo: currentUser.photoURL || "",
-    hcp: hcpIdx, playingHCP: ph, joinOrder: 1
+    hcp: hcpIdx, playingHCP: ph, joinOrder: 1, trackPutts: trackPutts
   };
 
   await set(gameRef, {
-    status: "waiting", courseName, scoringSystem: scoring, trackPutts, teeInfo,
+    status: "waiting", courseName, scoringSystem: scoring, teeInfo,
     hostUid: myUid, createdAt: serverTimestamp(), players, holes
   });
 
@@ -426,11 +426,11 @@ $("joinGameBtn").addEventListener("click", async () => {
   const ph = ti ? calcPH(hcpIdx, ti.slope, ti.rating, ti.par) : Math.round(hcpIdx);
 
   gameId = code;
-  gameRef = ref(db, `games/${gameId}`);
+  const trackPutts = $("trackPuttsJoin").checked;
 
   await update(ref(db, `games/${gameId}/players/${myUid}`), {
     name: currentUser.displayName || "Player", photo: currentUser.photoURL || "",
-    hcp: hcpIdx, playingHCP: ph, joinOrder: pCount + 1
+    hcp: hcpIdx, playingHCP: ph, joinOrder: pCount + 1, trackPutts: trackPutts
   });
 
   localStorage.setItem("gm_gid", gameId);
@@ -613,8 +613,8 @@ function loadHole(n, d) {
   $("myStrokesVal").textContent = myStrokes;
   $("myPuttsVal").textContent = myPutts;
 
-  // Show/Hide Putt counter
-  const isPutting = d.trackPutts;
+  // Show/Hide Putt counter based on player preference
+  const isPutting = d.players[myUid]?.trackPutts;
   $("puttCounterSection").classList.toggle("hidden", !isPutting);
 
   updateMyBreakdown(d, n);
@@ -635,7 +635,7 @@ function loadHole(n, d) {
     div.style.borderTop = `3px solid ${PLAYER_COLORS[i]}`;
     
     let detailHTML = `Net ${nv} · Pts ${pv}`;
-    if (d.trackPutts) {
+    if (d.players[uid]?.trackPutts) {
       detailHTML += ` · Putts ${pt}`;
     }
 
@@ -678,7 +678,7 @@ function updateLeaderboard(d) {
     div.className = "lb-card" + (p.uid === myUid ? " is-me" : "");
     div.style.borderTop = `3px solid ${PLAYER_COLORS[p.idx]}`;
     const medal = rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : `#${rank + 1}`;
-    const isP = d.trackPutts;
+    const isP = p.trackPutts;
     const primaryScore = p.pts;
     const primaryLabel = 'pts';
     let subLabel = `${p.strokes} st`;
@@ -765,14 +765,14 @@ function badge(g, par, hcp, si) {
 function renderTable(d) {
   if (!d) return;
   const players = getPlayers(d);
-  const isP = d.trackPutts;
+  const anyP = Object.values(d.players).some(p => p.trackPutts);
 
   // thead
   const thead = $("scorecardHead");
   let headerHTML = `<tr><th>Hole</th><th>Par</th><th>SI</th>`;
   players.forEach(([, p]) => {
     headerHTML += `<th>${short(p.name)}</th>`;
-    if (isP) headerHTML += `<th>P</th>`;
+    if (anyP) headerHTML += `<th>P</th>`;
     headerHTML += `<th>Pts</th>`;
   });
   headerHTML += `</tr>`;
@@ -787,13 +787,13 @@ function renderTable(d) {
 
   Object.values(d.holes).forEach((h, idx) => {
     let cells = `<td><strong>${idx + 1}</strong></td><td>${h.par}</td><td>${h.strokeIndex}</td>`;
-    players.forEach(([uid], i) => {
+    players.forEach(([uid, pInfo], i) => {
       const g = h.strokes?.[uid] || 0;
       const pt = h.putts?.[uid] || 0;
       const hcp = ph(d, uid);
       const pts = g ? stab(g, h.par, hcp, h.strokeIndex) : 0;
       cells += `<td>${badge(g, h.par, hcp, h.strokeIndex)}</td>`;
-      if (isP) cells += `<td>${pt || 0}</td>`;
+      if (anyP) cells += `<td>${pInfo.trackPutts ? (pt || 0) : ""}</td>`;
       cells += `<td>${g ? pts : "—"}</td>`;
       if (h.saved) { totS[i] += g; totPts[i] += pts; totPutts[i] += pt; }
     });
@@ -805,9 +805,9 @@ function renderTable(d) {
   const saved = Object.values(d.holes).filter(h => h.saved).length;
   if (saved) {
     let footHTML = `<tr><td>Total</td><td>${parSum}</td><td>—</td>`;
-    players.forEach((_, i) => {
+    players.forEach(([uid, pInfo], i) => {
       footHTML += `<td>${totS[i]}</td>`;
-      if (isP) footHTML += `<td>${totPutts[i]}</td>`;
+      if (anyP) footHTML += `<td>${pInfo.trackPutts ? totPutts[i] : ""}</td>`;
       footHTML += `<td><strong style="color:var(--gold)">${totPts[i]}</strong></td>`;
     });
     footHTML += `</tr>`;
@@ -826,7 +826,6 @@ function showResults(d) {
   $("resultsDate").textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   const players = getPlayers(d);
-  const isP = d.trackPutts;
 
   const ranked = players.map(([uid, p], i) => ({ uid, ...p, idx: i, ...totals(d, uid) }))
     .sort((a, b) => b.pts - a.pts || a.net - b.net);
@@ -851,7 +850,7 @@ function showResults(d) {
       <div class="stat-row highlight"><span>Stableford</span><strong>${p.pts} pts</strong></div>
     `;
     
-    if (isP) {
+    if (p.trackPutts) {
       statsHTML += `<div class="stat-row highlight" style="background:rgba(240,192,64,.1)"><span>Total Putts</span><strong>${p.totalPutts}</strong></div>`;
     }
 

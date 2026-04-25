@@ -362,7 +362,7 @@ function refreshCI(ck, tee) {
 // ═══════════════════════════════════════════════════════
 //  CREATE GAME
 // ═══════════════════════════════════════════════════════
-$("createGameBtn").addEventListener("click", async () => {
+async function createGame() {
   const hcpVal = $("myHCP").value.trim();
   const hcpIdx = parseFloat(hcpVal) || 0;
   if (hcpVal) localStorage.setItem("gm_hcp", hcpVal);
@@ -412,23 +412,26 @@ $("createGameBtn").addEventListener("click", async () => {
   localStorage.setItem("gm_gid", gameId);
   showWaiting();
   attachListener();
-});
+}
 
 // ═══════════════════════════════════════════════════════
 //  JOIN GAME
 // ═══════════════════════════════════════════════════════
-$("joinGameBtn").addEventListener("click", async () => {
+async function joinGame() {
   const code = $("joinCode").value.trim().toUpperCase();
-  $("joinError").textContent = "";
-  if (code.length !== 6) { $("joinError").textContent = "Enter a 6-character code."; return; }
+  const errEl = $("joinError");
+  if (errEl) errEl.textContent = "";
+  if (code.length !== 6) { if (errEl) errEl.textContent = "Enter a 6-character code."; return; }
 
   const snap = await get(ref(db, `games/${code}`));
-  if (!snap.exists()) { $("joinError").textContent = "Game not found."; return; }
+  if (!snap.exists()) { if (errEl) errEl.textContent = "Game not found."; return; }
   const d = snap.val();
-  if (d.status !== "waiting") { $("joinError").textContent = "Game already started."; return; }
-  const pCount = d.players ? Object.keys(d.players).length : 0;
-  if (pCount >= MAX_PLAYERS) { $("joinError").textContent = "Game is full (7 players max)."; return; }
-  if (d.players && d.players[myUid]) { $("joinError").textContent = "You're already in this game."; return; }
+  if (d.status !== "waiting") { if (errEl) errEl.textContent = "Game already started."; return; }
+  
+  const players = d.players || {};
+  const pCount = Object.keys(players).length;
+  if (pCount >= MAX_PLAYERS) { if (errEl) errEl.textContent = "Game is full (7 players max)."; return; }
+  if (players[myUid]) { if (errEl) errEl.textContent = "You're already in this game."; return; }
 
   const hcpVal = $("myHCP").value.trim();
   const hcpIdx = parseFloat(hcpVal) || 0;
@@ -438,7 +441,7 @@ $("joinGameBtn").addEventListener("click", async () => {
   const ph = ti ? calcPH(hcpIdx, ti.slope, ti.rating, ti.par) : Math.round(hcpIdx);
 
   gameId = code;
-  const trackPutts = $("trackPuttsJoin").checked;
+  const trackPutts = $("trackPuttsJoin")?.checked || false;
 
   await update(ref(db, `games/${gameId}/players/${myUid}`), {
     name: currentUser.displayName || "Player", photo: currentUser.photoURL || "",
@@ -447,7 +450,7 @@ $("joinGameBtn").addEventListener("click", async () => {
 
   localStorage.setItem("gm_gid", gameId);
   attachListener();
-});
+}
 
 // ═══════════════════════════════════════════════════════
 //  WAITING ROOM
@@ -531,12 +534,12 @@ function attachListener() {
 function handleUpdate(d) {
   if (d.status === "cancelled") { alert("Game cancelled."); cleanup(); showLobby(currentUser); return; }
   if (d.status === "waiting") {
-    if (!screens.waiting.classList.contains("active")) showWaiting();
+    if (!$("waitingScreen").classList.contains("active")) showWaiting();
     renderWaiting(d);
     return;
   }
   if (d.status === "active") {
-    if (!screens.scorecard.classList.contains("active") && !screens.results.classList.contains("active")) initScorecard(d);
+    if (!$("scorecardScreen").classList.contains("active") && !$("resultsScreen").classList.contains("active")) initScorecard(d);
     else refreshScorecard(d);
     return;
   }

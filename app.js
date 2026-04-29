@@ -599,9 +599,6 @@ function initScorecard(d) {
     btn.addEventListener("click", () => loadHole(i));
     nav.appendChild(btn);
   }
-  // SI dropdown
-  const sel = $("holeSI"); sel.innerHTML = "";
-  for (let i = 1; i <= 18; i++) { const o = document.createElement("option"); o.value = i; o.textContent = i; sel.appendChild(o); }
 
   show("scorecard");
   currentHole = 1;
@@ -634,9 +631,9 @@ function loadHole(n, d) {
     }
   }
 
-  $("holePar").value = h.par;
-  $("holeSI").value = h.strokeIndex;
-  $("holeMeters").value = h.meters || "";
+  $("holePar").textContent = h.par;
+  $("holeSI").textContent = h.strokeIndex;
+  $("holeMeters").textContent = h.meters ? h.meters + " m" : "—";
 
   // My strokes & putts
   const myStrokes = h.strokes?.[myUid] || 0;
@@ -724,7 +721,7 @@ function updateLeaderboard(d) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  STROKE COUNTER & HOLE META
+//  STROKE COUNTER
 // ═══════════════════════════════════════════════════════
 $("myPlus").addEventListener("click", () => adj(1, 'strokes'));
 $("myMinus").addEventListener("click", () => adj(-1, 'strokes'));
@@ -738,17 +735,6 @@ async function adj(delta, type) {
   const path = type === 'putts' ? 'putts' : 'strokes';
   await update(ref(db, `games/${gameId}/holes/${currentHole - 1}/${path}`), { [myUid]: Math.max(0, cur + delta) });
 }
-
-$("holePar").addEventListener("change", async () => {
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { par: parseInt($("holePar").value) });
-});
-$("holeSI").addEventListener("change", async () => {
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { strokeIndex: parseInt($("holeSI").value) });
-});
-$("holeMeters").addEventListener("change", async () => {
-  const m = $("holeMeters").value;
-  await update(ref(db, `games/${gameId}/holes/${currentHole - 1}`), { meters: m ? parseInt(m) : null });
-});
 
 // ═══════════════════════════════════════════════════════
 //  SAVE HOLE / NAV

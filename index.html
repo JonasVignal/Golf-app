@@ -213,16 +213,10 @@
             <button class="link-btn" id="viewMapBtn"
               style="display:none; margin-top:4px; font-size:12px; color:var(--gold);">🗺️ View Map</button>
             <div class="hole-meta">
-              <div class="hole-meta-item"><label>Par</label><select class="meta-select" id="holePar">
-                  <option value="3">3</option>
-                  <option value="4" selected>4</option>
-                  <option value="5">5</option>
-                </select></div>
-              <div class="hole-meta-item"><label>SI</label><select class="meta-select" id="holeSI"></select></div>
-              <div class="hole-meta-item"><label>Meters</label><input type="number" inputmode="numeric" class="meta-input" id="holeMeters"
-                  placeholder="—" min="50" max="650" /></div>
+              <div class="hole-meta-item"><label>Par</label><span class="meta-display" id="holePar">4</span></div>
+              <div class="hole-meta-item"><label>SI</label><span class="meta-display" id="holeSI">—</span></div>
+              <div class="hole-meta-item"><label>Meters</label><span class="meta-display" id="holeMeters">—</span></div>
             </div>
-            <p style="text-align:center;font-size:.65rem;color:var(--tx-d);margin-top:6px;">✏️ Tap to edit</p>
           </div>
           <button class="nav-arrow" id="nextHole">→</button>
         </div>

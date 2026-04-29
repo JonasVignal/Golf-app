@@ -53,6 +53,26 @@ const COURSES = {
     name: "Husesø GK (18 holes)", location: "Denmark", par: 70,
     pars: [4, 4, 5, 4, 4, 3, 4, 3, 4, 4, 4, 5, 4, 4, 4, 3, 4, 3],
     si: [15, 5, 13, 9, 3, 11, 7, 1, 17, 16, 6, 14, 10, 4, 12, 8, 2, 18],
+    gps: [
+      [55.726229, 12.312154],  // Hole 1  (55°43'41.3"N 12°18'43.8"E)
+      [55.726883, 12.320377],  // Hole 2
+      [55.722441, 12.320459],  // Hole 3
+      [55.719158, 12.322260],  // Hole 4
+      [55.719335, 12.315162],  // Hole 5
+      [55.719808, 12.308291],  // Hole 6
+      [55.721478, 12.308495],  // Hole 7
+      [55.725714, 12.303039],  // Hole 8
+      [55.727498, 12.303544],  // Hole 9
+      [55.726229, 12.312154],  // Hole 10 (= Hole 1)
+      [55.726883, 12.320377],  // Hole 11 (= Hole 2)
+      [55.722441, 12.320459],  // Hole 12 (= Hole 3)
+      [55.719158, 12.322260],  // Hole 13 (= Hole 4)
+      [55.719335, 12.315162],  // Hole 14 (= Hole 5)
+      [55.719808, 12.308291],  // Hole 15 (= Hole 6)
+      [55.721478, 12.308495],  // Hole 16 (= Hole 7)
+      [55.725714, 12.303039],  // Hole 17 (= Hole 8)
+      [55.727498, 12.303544],  // Hole 18 (= Hole 9)
+    ],
     tees: {
       t58: { label: "⚫ 58", length: 6010, rating: 73.0, slope: 131, lengths: [344, 366, 456, 408, 391, 325, 191, 379, 145, 344, 366, 456, 408, 391, 325, 191, 379, 145] },
       t55: { label: "🟡 55", length: 5720, rating: 71.5, slope: 128, lengths: [297, 366, 456, 367, 334, 325, 191, 379, 145, 297, 366, 456, 367, 334, 325, 191, 379, 145] },
@@ -230,7 +250,7 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 

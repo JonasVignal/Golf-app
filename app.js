@@ -210,26 +210,28 @@ window.addEventListener('unhandledrejection', (e) => {
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// 1. ATTACH LISTENERS
+// 1. ATTACH LISTENERS — Always use signInWithPopup first (works on mobile
+//    when triggered by a direct user click).  Only fall back to redirect
+//    if the popup is explicitly blocked by the browser.
 if ($("signInBtn")) {
   $("signInBtn").addEventListener("click", () => {
     const errorNote = $("loginError");
     if (errorNote) errorNote.textContent = "Connecting to Google...";
 
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-      signInWithRedirect(auth, googleProvider).catch(handleAuthError);
-    } else {
-      signInWithPopup(auth, googleProvider)
-        .then(() => { if (errorNote) errorNote.textContent = ""; })
-        .catch((e) => {
-          if (e.code === "auth/popup-blocked") {
-            signInWithRedirect(auth, googleProvider).catch(handleAuthError);
-          } else {
-            handleAuthError(e);
-          }
-        });
-    }
+    signInWithPopup(auth, googleProvider)
+      .then(() => { if (errorNote) errorNote.textContent = ""; })
+      .catch((e) => {
+        if (e.code === "auth/popup-blocked" || e.code === "auth/popup-closed-by-browser") {
+          // Last-resort fallback — only when the browser actively blocked the popup
+          if (errorNote) errorNote.textContent = "Popup blocked — redirecting...";
+          signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+        } else if (e.code === "auth/cancelled-popup-request") {
+          // User double-clicked or a previous popup was still open — ignore
+          if (errorNote) errorNote.textContent = "";
+        } else {
+          handleAuthError(e);
+        }
+      });
   });
 }
 
@@ -242,32 +244,29 @@ if ($("lobbySignOut")) {
 // ═══════════════════════════════════════════════════════
 
 // Flag: true while we are still checking whether the page load is a
-// redirect-sign-in return.  While this is true, onAuthStateChanged
-// must NOT react to a null user (it's just Firebase still processing).
+// redirect-sign-in return (only relevant for the redirect fallback).
 let redirectPending = true;
 
-// 1.  First, resolve the redirect result.  On a normal (non-redirect)
-//     page load this resolves instantly with null, so the flag is cleared
-//     almost immediately and onAuthStateChanged behaves as usual.
+// Check for a pending redirect result (resolves instantly with null
+// on a normal page load, so the flag is cleared almost immediately).
 getRedirectResult(auth)
   .then((result) => {
-    redirectPending = false;                // done checking
-    if (result?.user) {
-      // Redirect sign-in succeeded — onAuthStateChanged will also fire
-      // with this user, so we let that handler take over.
-      // Nothing extra to do here.
+    redirectPending = false;
+    if (redirectPending === false && !auth.currentUser && !result?.user) {
+      // No redirect result and no cached user — show login screen now
+      show("login");
     }
   })
   .catch((e) => {
-    redirectPending = false;                // done checking
+    redirectPending = false;
     handleAuthError(e);
+    if (!auth.currentUser) show("login");
   });
 
-// 2.  The single source of truth for auth state.
+// The single source of truth for auth state.
 onAuthStateChanged(auth, user => {
   currentUser = user; myUid = user?.uid || null;
   if (user) {
-    // User is signed in (either from cache, popup, or redirect).
     const sid = localStorage.getItem("gm_gid");
     if (sid) {
       gameId = sid; gameRef = ref(db, `games/${gameId}`);
@@ -276,9 +275,8 @@ onAuthStateChanged(auth, user => {
       showLobby(user);
     }
   } else {
-    // No user — but if a redirect is still processing, do NOT show
-    // the login screen yet (the redirect result may still produce a user).
-    if (redirectPending) return;            // wait for getRedirectResult
+    // No user — but if a redirect is still being processed, wait.
+    if (redirectPending) return;
     cleanup(); show("login");
   }
 });

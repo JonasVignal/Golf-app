@@ -130,6 +130,8 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--g900);color:var(
 .hole-meta-item{position:relative;text-align:center}
 .hole-meta-item label{display:block;font-size:.68rem;color:var(--tx-m);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;text-align:center}
 .meta-display{display:block;background:var(--sf3);border:1px solid var(--bd2);border-radius:var(--rs);color:var(--tx);font-size:1.05rem;font-weight:700;padding:10px 14px;min-width:78px;text-align:center}
+.meta-display.gps-live{border-color:var(--g400);color:var(--g300);min-width:100px;animation:gpsPulse 2s ease-in-out infinite}
+@keyframes gpsPulse{0%,100%{box-shadow:0 0 0 0 rgba(61,202,122,.2)}50%{box-shadow:0 0 8px 2px rgba(61,202,122,.25)}}
 .nav-arrow{background:var(--sf3);border:1px solid var(--bd2);color:var(--tx);border-radius:var(--rs);width:42px;height:42px;font-size:1.1rem;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:16px;font-family:'Outfit',sans-serif}
 .nav-arrow:hover{background:var(--sf2);border-color:var(--g400);color:var(--g400)}
 .nav-arrow:disabled{opacity:.4;cursor:not-allowed}

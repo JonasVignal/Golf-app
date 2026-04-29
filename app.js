@@ -143,6 +143,27 @@ const COURSES = {
     par: 66,
     pars: [3, 4, 4, 4, 3, 5, 3, 3, 4, 3, 4, 4, 4, 3, 5, 3, 3, 4],
     si: [15, 9, 5, 7, 13, 1, 11, 17, 3, 16, 10, 6, 8, 14, 2, 12, 18, 4],
+    // GPS pin coordinates (lat, lng) for each hole — 9 holes repeated for 18
+    gps: [
+      [55.728139, 12.312167],  // Hole 1  (55°43'41.3"N 12°18'43.8"E)
+      [55.729485, 12.315493],  // Hole 2
+      [55.727624, 12.312510],  // Hole 3
+      [55.728266, 12.316018],  // Hole 4
+      [55.727578, 12.317076],  // Hole 5
+      [55.729633, 12.322252],  // Hole 6
+      [55.729340, 12.319295],  // Hole 7
+      [55.729377, 12.317984],  // Hole 8
+      [55.728660, 12.311080],  // Hole 9
+      [55.728139, 12.312167],  // Hole 10 (= Hole 1)
+      [55.729485, 12.315493],  // Hole 11 (= Hole 2)
+      [55.727624, 12.312510],  // Hole 12 (= Hole 3)
+      [55.728266, 12.316018],  // Hole 13 (= Hole 4)
+      [55.727578, 12.317076],  // Hole 14 (= Hole 5)
+      [55.729633, 12.322252],  // Hole 15 (= Hole 6)
+      [55.729340, 12.319295],  // Hole 16 (= Hole 7)
+      [55.729377, 12.317984],  // Hole 17 (= Hole 8)
+      [55.728660, 12.311080],  // Hole 18 (= Hole 9)
+    ],
     tees: {
       t38: { label: "⚫ 38", length: 3808, rating: 60.7, slope: 97, lengths: [95, 231, 241, 233, 132, 435, 155, 106, 276, 95, 231, 241, 233, 132, 435, 155, 106, 276] },
       t32: { label: "🟡 32", length: 3226, rating: 57.7, slope: 90, lengths: [95, 195, 187, 198, 122, 345, 145, 100, 226, 95, 195, 187, 198, 122, 345, 145, 100, 226] }
@@ -172,6 +193,14 @@ function short(n) {
   const p = n.trim().split(" ");
   return p.length >= 2 ? p[0] + " " + p[1][0] + "." : p[0];
 }
+// Find GPS coordinates for a course by matching the game's courseName to COURSES
+function findCourseGps(courseName) {
+  if (!courseName) return null;
+  for (const c of Object.values(COURSES)) {
+    if (c.gps && courseName.includes(c.name)) return c.gps;
+  }
+  return null;
+}
 
 
 // ─── State ───────────────────────────────────────────
@@ -187,6 +216,64 @@ let seenMapHoles = new Set();
 
 // Global Helper
 const $ = id => document.getElementById(id);
+
+// ─── GPS Distance Tracking ──────────────────────────
+let gpsWatchId = null;
+let gpsCourseKey = null;       // which course key has GPS data (e.g. 'smorum_intermediate')
+let gpsCoords = null;          // the gps[] array from the course
+let lastGpsPosition = null;    // { lat, lng } of user
+
+// Haversine formula — returns metres between two lat/lng points
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Earth radius in metres
+  const toRad = x => x * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function startGpsTracking(courseGps) {
+  stopGpsTracking();
+  if (!courseGps || !navigator.geolocation) return;
+  gpsCoords = courseGps;
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      lastGpsPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      updateGpsDistance();
+    },
+    (err) => {
+      console.warn('GPS error:', err.message);
+      const el = $("holeMeters");
+      if (el && gpsCoords) el.textContent = "GPS unavailable";
+    },
+    { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+  );
+}
+
+function stopGpsTracking() {
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
+  gpsCoords = null;
+  lastGpsPosition = null;
+}
+
+function updateGpsDistance() {
+  if (!gpsCoords || !lastGpsPosition) return;
+  const holeIdx = currentHole - 1;
+  const pin = gpsCoords[holeIdx];
+  if (!pin) return;
+  const dist = haversineMeters(lastGpsPosition.lat, lastGpsPosition.lng, pin[0], pin[1]);
+  const el = $("holeMeters");
+  if (el) {
+    el.textContent = `📍 ${Math.round(dist)} m`;
+    el.classList.add("gps-live");
+  }
+}
 
 // Safe show function
 function show(name) {
@@ -298,6 +385,7 @@ function hideLoginError() {
 
 function cleanup() {
   if (gameRef) off(gameRef);
+  stopGpsTracking();
   gameId = null; gameData = null;
   seenSavedHoles = null;
   seenMapHoles.clear();
@@ -600,6 +688,12 @@ function initScorecard(d) {
     nav.appendChild(btn);
   }
 
+  // Start GPS tracking if the course has GPS coordinates
+  const courseGps = findCourseGps(d.courseName);
+  if (courseGps) {
+    startGpsTracking(courseGps);
+  }
+
   show("scorecard");
   currentHole = 1;
   loadHole(1, d);
@@ -633,7 +727,23 @@ function loadHole(n, d) {
 
   $("holePar").textContent = h.par;
   $("holeSI").textContent = h.strokeIndex;
-  $("holeMeters").textContent = h.meters ? h.meters + " m" : "—";
+
+  // If GPS tracking is active, show live distance; otherwise show static meters
+  const metersEl = $("holeMeters");
+  const metersLabel = metersEl?.previousElementSibling; // the <label>
+  if (gpsCoords) {
+    if (metersLabel) metersLabel.textContent = "Distance";
+    metersEl.classList.add("gps-live");
+    if (lastGpsPosition) {
+      updateGpsDistance();
+    } else {
+      metersEl.textContent = "📍 Locating…";
+    }
+  } else {
+    if (metersLabel) metersLabel.textContent = "Meters";
+    metersEl.classList.remove("gps-live");
+    metersEl.textContent = h.meters ? h.meters + " m" : "—";
+  }
 
   // My strokes & putts
   const myStrokes = h.strokes?.[myUid] || 0;

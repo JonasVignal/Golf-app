@@ -240,9 +240,34 @@ if ($("lobbySignOut")) {
 // ═══════════════════════════════════════════════════════
 //  AUTH CYCLE
 // ═══════════════════════════════════════════════════════
+
+// Flag: true while we are still checking whether the page load is a
+// redirect-sign-in return.  While this is true, onAuthStateChanged
+// must NOT react to a null user (it's just Firebase still processing).
+let redirectPending = true;
+
+// 1.  First, resolve the redirect result.  On a normal (non-redirect)
+//     page load this resolves instantly with null, so the flag is cleared
+//     almost immediately and onAuthStateChanged behaves as usual.
+getRedirectResult(auth)
+  .then((result) => {
+    redirectPending = false;                // done checking
+    if (result?.user) {
+      // Redirect sign-in succeeded — onAuthStateChanged will also fire
+      // with this user, so we let that handler take over.
+      // Nothing extra to do here.
+    }
+  })
+  .catch((e) => {
+    redirectPending = false;                // done checking
+    handleAuthError(e);
+  });
+
+// 2.  The single source of truth for auth state.
 onAuthStateChanged(auth, user => {
   currentUser = user; myUid = user?.uid || null;
   if (user) {
+    // User is signed in (either from cache, popup, or redirect).
     const sid = localStorage.getItem("gm_gid");
     if (sid) {
       gameId = sid; gameRef = ref(db, `games/${gameId}`);
@@ -251,18 +276,11 @@ onAuthStateChanged(auth, user => {
       showLobby(user);
     }
   } else {
+    // No user — but if a redirect is still processing, do NOT show
+    // the login screen yet (the redirect result may still produce a user).
+    if (redirectPending) return;            // wait for getRedirectResult
     cleanup(); show("login");
   }
-});
-
-getRedirectResult(auth).then((result) => {
-  if (result?.user) {
-    currentUser = result.user;
-    myUid = result.user.uid;
-    showLobby(result.user);
-  }
-}).catch((e) => {
-  handleAuthError(e);
 });
 
 function handleAuthError(e) {

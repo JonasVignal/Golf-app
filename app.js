@@ -71,7 +71,7 @@ const COURSES = {
   },
   huseso: {
     name: "Husesø GK (18 holes)", location: "Denmark", par: 70,
-    pars: [4, 4, 5, 4, 4, 3, 4, 3, 4, 4, 4, 5, 4, 4, 4, 3, 4, 3],
+    pars: [4, 4, 5, 4, 4, 4, 3, 4, 3, 4, 4, 5, 4, 4, 4, 3, 4, 3],
     si: [15, 5, 13, 9, 3, 11, 7, 1, 17, 16, 6, 14, 10, 4, 12, 8, 2, 18],
     gps: [
       [55.726229, 12.312154],  // Hole 1  (55°43'41.3"N 12°18'43.8"E)
@@ -461,8 +461,8 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 function isInAppBrowser() {
   const ua = navigator.userAgent || '';
   return /FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\//i.test(ua) ||
-         // Generic WebView checks
-         (ua.includes('wv') && ua.includes('Android'));
+    // Generic WebView checks
+    (ua.includes('wv') && ua.includes('Android'));
 }
 
 // 1. ATTACH LISTENERS — Always use signInWithPopup first (works on mobile

@@ -456,12 +456,36 @@ window.addEventListener('unhandledrejection', (e) => {
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
+// Detect in-app browsers (Messenger, Facebook, Instagram, etc.)
+// Google blocks OAuth from these embedded WebViews with "disallowed_useragent"
+function isInAppBrowser() {
+  const ua = navigator.userAgent || '';
+  return /FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\//i.test(ua) ||
+         // Generic WebView checks
+         (ua.includes('wv') && ua.includes('Android'));
+}
+
 // 1. ATTACH LISTENERS — Always use signInWithPopup first (works on mobile
 //    when triggered by a direct user click).  Only fall back to redirect
 //    if the popup is explicitly blocked by the browser.
 if ($("signInBtn")) {
+  // Show in-app browser warning if needed
+  if (isInAppBrowser()) {
+    const warning = $("inAppWarning");
+    if (warning) warning.classList.remove("hidden");
+    const errorNote = $("loginError");
+    if (errorNote) errorNote.textContent = "";
+  }
+
   $("signInBtn").addEventListener("click", () => {
     const errorNote = $("loginError");
+
+    // If inside an in-app browser, don't even try — just show the warning
+    if (isInAppBrowser()) {
+      if (errorNote) errorNote.textContent = "Please open in Safari or Chrome first.";
+      return;
+    }
+
     if (errorNote) errorNote.textContent = "Connecting to Google...";
 
     signInWithPopup(auth, googleProvider)
@@ -478,6 +502,20 @@ if ($("signInBtn")) {
           handleAuthError(e);
         }
       });
+  });
+}
+
+// Copy link button for in-app browser users
+if ($("copyLinkBtn")) {
+  $("copyLinkBtn").addEventListener("click", () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      $("copyLinkBtn").textContent = "✓ Link Copied!";
+      setTimeout(() => $("copyLinkBtn").textContent = "📋 Copy Link", 2500);
+    }).catch(() => {
+      // Fallback: select a prompt
+      window.prompt("Copy this link and open in Safari/Chrome:", url);
+    });
   });
 }
 

@@ -44,6 +44,12 @@
           </svg>
           Sign in with Google
         </button>
+        <!-- In-app browser warning (hidden by default) -->
+        <div id="inAppWarning" class="in-app-warning hidden">
+          <p>⚠️ <strong>Open in Safari or Chrome</strong></p>
+          <p>Google login doesn't work inside Messenger, Instagram or Facebook. Tap below to copy the link, then paste it in your browser.</p>
+          <button class="copy-link-btn" id="copyLinkBtn">📋 Copy Link</button>
+        </div>
         <p class="login-note" id="loginError"></p>
       </div>
     </div>

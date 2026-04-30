@@ -1192,6 +1192,90 @@ function showResults(d) {
 $("playAgainBtn").addEventListener("click", () => { cleanup(); currentHole = 1; showLobby(currentUser); });
 
 // ═══════════════════════════════════════════════════════
+//  EMAIL RESULTS
+// ═══════════════════════════════════════════════════════
+$("emailResultsBtn").addEventListener("click", () => {
+  if (!gameData) return;
+  const d = gameData;
+  const dateStr = new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const players = getPlayers(d);
+  const ranked = players.map(([uid, p], i) => ({ uid, ...p, idx: i, ...totals(d, uid) }))
+    .sort((a, b) => b.pts - a.pts || a.net - b.net);
+
+  // Build subject
+  const subject = `GolfMate Results — ${d.courseName} — ${dateStr}`;
+
+  // Build body
+  let body = `⛳ GOLFMATE — ROUND RESULTS\n`;
+  body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  body += `📍 Course: ${d.courseName}\n`;
+  body += `📅 Date: ${dateStr}\n`;
+  body += `👥 Players: ${ranked.length}\n\n`;
+
+  // Winner
+  const winner = ranked[0];
+  body += `🏆 WINNER: ${winner.name} — ${winner.pts} pts\n\n`;
+
+  // Leaderboard
+  body += `━━━ LEADERBOARD ━━━\n\n`;
+  ranked.forEach((p, rank) => {
+    const medal = rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : `#${rank + 1}`;
+    body += `${medal}  ${p.name}\n`;
+    body += `    HCP: ${p.hcp}  |  PH: ${p.playingHCP}\n`;
+    body += `    Strokes: ${p.strokes}  |  Net: ${p.net}  |  Stableford: ${p.pts} pts\n`;
+    if (p.trackPutts) {
+      body += `    Putts: ${p.totalPutts}\n`;
+    }
+    body += `\n`;
+  });
+
+  // Hole-by-hole scorecard
+  body += `━━━ SCORECARD ━━━\n\n`;
+
+  // Header row
+  let header = "Hole".padEnd(6) + "Par".padEnd(5);
+  ranked.forEach(p => { header += short(p.name).padEnd(10); });
+  body += header + "\n";
+  body += "─".repeat(header.length) + "\n";
+
+  // Each hole
+  let totalPar = 0;
+  const totalStrokes = new Array(ranked.length).fill(0);
+  const totalPts = new Array(ranked.length).fill(0);
+
+  Object.values(d.holes).forEach((h, idx) => {
+    if (!h.saved) return;
+    totalPar += h.par;
+    let row = `${(idx + 1).toString().padEnd(6)}${h.par.toString().padEnd(5)}`;
+    ranked.forEach((p, pi) => {
+      const g = h.strokes?.[p.uid] || 0;
+      const pts = g ? stab(g, h.par, ph(d, p.uid), h.strokeIndex) : 0;
+      totalStrokes[pi] += g;
+      totalPts[pi] += pts;
+      row += `${g || "—"}`.padEnd(10);
+    });
+    body += row + "\n";
+  });
+
+  // Totals row
+  body += "─".repeat(header.length) + "\n";
+  let totRow = "Total".padEnd(6) + totalPar.toString().padEnd(5);
+  ranked.forEach((p, pi) => { totRow += `${totalStrokes[pi]}`.padEnd(10); });
+  body += totRow + "\n";
+
+  let ptsRow = "Pts".padEnd(6) + "".padEnd(5);
+  ranked.forEach((p, pi) => { ptsRow += `${totalPts[pi]}`.padEnd(10); });
+  body += ptsRow + "\n\n";
+
+  body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  body += `Sent from GolfMate ⛳\n`;
+
+  // Open mailto
+  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+});
+
+// ═══════════════════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════════════════
 function genCode() { const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return Array.from({ length: 6 }, () => c[Math.floor(Math.random() * c.length)]).join(""); }

@@ -199,6 +199,8 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--g900);color:var(
 .stat-row{display:flex;justify-content:space-between;font-size:.82rem;padding:4px 0;border-bottom:1px solid var(--bd)}
 .stat-row:last-child{border-bottom:none}.stat-row span{color:var(--tx-m)}.stat-row strong{color:var(--tx);font-weight:700}
 .stat-row.highlight strong{color:var(--gold);font-size:1rem}
+.email-btn{width:100%;padding:13px;border:1.5px solid rgba(91,168,255,.4);background:rgba(91,168,255,.1);border-radius:var(--r);color:#5ba8ff;font-size:.95rem;font-weight:700;cursor:pointer;transition:.22s;font-family:'Outfit',sans-serif;margin-bottom:10px;margin-top:4px}
+.email-btn:hover{background:rgba(91,168,255,.2);border-color:rgba(91,168,255,.6)}
 
 /* ════════ GOLFKONGERNE SHOT POPUP ════════ */
 .shot-popup {

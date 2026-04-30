@@ -702,6 +702,7 @@ async function createGame() {
   const players = {};
   players[myUid] = {
     name: currentUser.displayName || "Player 1", photo: currentUser.photoURL || "",
+    email: currentUser.email || "",
     hcp: hcpIdx, playingHCP: ph, joinOrder: 1, trackPutts: trackPutts
   };
 
@@ -747,6 +748,7 @@ async function joinGame() {
 
   await update(ref(db, `games/${gameId}/players/${myUid}`), {
     name: currentUser.displayName || "Player", photo: currentUser.photoURL || "",
+    email: currentUser.email || "",
     hcp: hcpIdx, playingHCP: ph, joinOrder: pCount + 1, trackPutts: trackPutts
   });
 
@@ -1194,85 +1196,80 @@ $("playAgainBtn").addEventListener("click", () => { cleanup(); currentHole = 1; 
 // ═══════════════════════════════════════════════════════
 //  EMAIL RESULTS
 // ═══════════════════════════════════════════════════════
-$("emailResultsBtn").addEventListener("click", () => {
-  if (!gameData) return;
-  const d = gameData;
+function buildResultsText(d) {
   const dateStr = new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   const players = getPlayers(d);
   const ranked = players.map(([uid, p], i) => ({ uid, ...p, idx: i, ...totals(d, uid) }))
     .sort((a, b) => b.pts - a.pts || a.net - b.net);
 
-  // Build subject
-  const subject = `GolfMate Results — ${d.courseName} — ${dateStr}`;
-
-  // Build body
-  let body = `⛳ GOLFMATE — ROUND RESULTS\n`;
-  body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-  body += `📍 Course: ${d.courseName}\n`;
-  body += `📅 Date: ${dateStr}\n`;
-  body += `👥 Players: ${ranked.length}\n\n`;
-
-  // Winner
   const winner = ranked[0];
-  body += `🏆 WINNER: ${winner.name} — ${winner.pts} pts\n\n`;
-
-  // Leaderboard
-  body += `━━━ LEADERBOARD ━━━\n\n`;
+  let body = `GolfMate - Round Results\n\n`;
+  body += `Course: ${d.courseName}\n`;
+  body += `Date: ${dateStr}\n`;
+  body += `Players: ${ranked.length}\n\n`;
+  body += `WINNER: ${winner.name} - ${winner.pts} pts\n\n`;
+  body += `--- LEADERBOARD ---\n\n`;
   ranked.forEach((p, rank) => {
-    const medal = rank === 0 ? "🥇" : rank === 1 ? "🥈" : rank === 2 ? "🥉" : `#${rank + 1}`;
+    const medal = rank === 0 ? "1st" : rank === 1 ? "2nd" : rank === 2 ? "3rd" : `${rank + 1}th`;
     body += `${medal}  ${p.name}\n`;
-    body += `    HCP: ${p.hcp}  |  PH: ${p.playingHCP}\n`;
-    body += `    Strokes: ${p.strokes}  |  Net: ${p.net}  |  Stableford: ${p.pts} pts\n`;
-    if (p.trackPutts) {
-      body += `    Putts: ${p.totalPutts}\n`;
-    }
+    body += `  HCP: ${p.hcp} | PH: ${p.playingHCP}\n`;
+    body += `  Strokes: ${p.strokes} | Net: ${p.net} | Stableford: ${p.pts} pts\n`;
+    if (p.trackPutts) body += `  Putts: ${p.totalPutts}\n`;
     body += `\n`;
   });
 
-  // Hole-by-hole scorecard
-  body += `━━━ SCORECARD ━━━\n\n`;
-
-  // Header row
-  let header = "Hole".padEnd(6) + "Par".padEnd(5);
-  ranked.forEach(p => { header += short(p.name).padEnd(10); });
-  body += header + "\n";
-  body += "─".repeat(header.length) + "\n";
-
-  // Each hole
+  body += `--- SCORECARD ---\n\n`;
   let totalPar = 0;
-  const totalStrokes = new Array(ranked.length).fill(0);
-  const totalPts = new Array(ranked.length).fill(0);
-
   Object.values(d.holes).forEach((h, idx) => {
     if (!h.saved) return;
     totalPar += h.par;
-    let row = `${(idx + 1).toString().padEnd(6)}${h.par.toString().padEnd(5)}`;
-    ranked.forEach((p, pi) => {
+    let line = `H${idx + 1} (P${h.par}): `;
+    const scores = ranked.map(p => {
       const g = h.strokes?.[p.uid] || 0;
-      const pts = g ? stab(g, h.par, ph(d, p.uid), h.strokeIndex) : 0;
-      totalStrokes[pi] += g;
-      totalPts[pi] += pts;
-      row += `${g || "—"}`.padEnd(10);
+      return `${short(p.name)}=${g || "-"}`;
     });
-    body += row + "\n";
+    body += line + scores.join(", ") + "\n";
   });
 
-  // Totals row
-  body += "─".repeat(header.length) + "\n";
-  let totRow = "Total".padEnd(6) + totalPar.toString().padEnd(5);
-  ranked.forEach((p, pi) => { totRow += `${totalStrokes[pi]}`.padEnd(10); });
-  body += totRow + "\n";
+  body += `\nSent from GolfMate`;
 
-  let ptsRow = "Pts".padEnd(6) + "".padEnd(5);
-  ranked.forEach((p, pi) => { ptsRow += `${totalPts[pi]}`.padEnd(10); });
-  body += ptsRow + "\n\n";
+  return { body, dateStr, ranked };
+}
 
-  body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-  body += `Sent from GolfMate ⛳\n`;
+$("emailResultsBtn").addEventListener("click", async () => {
+  if (!gameData) return;
+  const d = gameData;
+  const { body, dateStr, ranked } = buildResultsText(d);
+  const subject = `GolfMate Results - ${d.courseName} - ${dateStr}`;
 
-  // Open mailto
-  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  window.location.href = mailto;
+  // Collect all player emails
+  const emails = ranked
+    .map(p => p.email)
+    .filter(e => e && e.includes("@"));
+
+  // Try Web Share API first (works great on mobile)
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: subject,
+        text: body
+      });
+      return;
+    } catch (e) {
+      // User cancelled share or API failed — fall through to mailto
+      if (e.name === "AbortError") return;
+    }
+  }
+
+  // Fallback: mailto with player emails pre-filled
+  const to = emails.join(",");
+  const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  // Try opening mailto
+  const link = document.createElement("a");
+  link.href = mailto;
+  link.target = "_blank";
+  link.click();
 });
 
 // ═══════════════════════════════════════════════════════

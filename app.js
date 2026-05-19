@@ -488,9 +488,18 @@ if ($("signInBtn")) {
 
     if (errorNote) errorNote.textContent = "Connecting to Google...";
 
+    // Mark a popup as in-flight so onAuthStateChanged doesn't show login
+    // if it fires null during the popup handshake.
+    popupPending = true;
+    pendingShowLogin = false;
+
     signInWithPopup(auth, googleProvider)
-      .then(() => { if (errorNote) errorNote.textContent = ""; })
+      .then(() => {
+        popupPending = false;
+        if (errorNote) errorNote.textContent = "";
+      })
       .catch((e) => {
+        popupPending = false;
         if (e.code === "auth/popup-blocked" || e.code === "auth/popup-closed-by-browser") {
           // Last-resort fallback — only when the browser actively blocked the popup
           if (errorNote) errorNote.textContent = "Popup blocked — redirecting...";
@@ -500,6 +509,8 @@ if ($("signInBtn")) {
           if (errorNote) errorNote.textContent = "";
         } else {
           handleAuthError(e);
+          // Show login only if sign-in genuinely failed
+          if (!auth.currentUser) show("login");
         }
       });
   });
@@ -523,23 +534,28 @@ if ($("lobbySignOut")) {
   $("lobbySignOut").addEventListener("click", () => signOut(auth));
 }
 
-// ═══════════════════════════════════════════════════════
-//  AUTH CYCLE
-// ═══════════════════════════════════════════════════════
+// ─── Auth State Machine ──────────────────────────────
+// Problem: on mobile with signInWithPopup, both getRedirectResult and
+// onAuthStateChanged can fire with "no user" BEFORE the popup result
+// updates the session.  We must never call show("login") until we are
+// truly sure no sign-in is in-flight.
 
-// Flag: true while we are still waiting for getRedirectResult to settle.
-// onAuthStateChanged will not show the login screen until this is false.
+// Set to true while a popup sign-in is in progress so onAuthStateChanged
+// does not prematurely redirect to login.
+let popupPending = false;
+
+// redirectPending guards the one-time getRedirectResult check on page load.
 let redirectPending = true;
 
-// getRedirectResult resolves instantly with null on a normal (non-redirect)
-// page load, so redirectPending is cleared almost immediately.
-// On a redirect-sign-in return it resolves with the signed-in user.
+// Track whether onAuthStateChanged already fired null while we were waiting.
+let pendingShowLogin = false;
+
 getRedirectResult(auth)
   .then(() => {
     redirectPending = false;
-    // If onAuthStateChanged already fired with no user (and skipped because
-    // redirectPending was true), and there's still no user now, show login.
-    if (!auth.currentUser) show("login");
+    // Only show login if onAuthStateChanged already said "no user" and no
+    // popup is currently in-flight.
+    if (pendingShowLogin && !popupPending && !auth.currentUser) show("login");
   })
   .catch((e) => {
     redirectPending = false;
@@ -551,6 +567,7 @@ getRedirectResult(auth)
 onAuthStateChanged(auth, user => {
   currentUser = user; myUid = user?.uid || null;
   if (user) {
+    popupPending = false; // sign-in completed
     const sid = localStorage.getItem("gm_gid");
     if (sid) {
       gameId = sid; gameRef = ref(db, `games/${gameId}`);
@@ -559,8 +576,11 @@ onAuthStateChanged(auth, user => {
       showLobby(user);
     }
   } else {
-    // No user — but if a redirect is still being processed, wait.
-    if (redirectPending) return;
+    // No user — wait for getRedirectResult to settle first
+    if (redirectPending || popupPending) {
+      pendingShowLogin = true; // remember to show login once settled
+      return;
+    }
     cleanup(); show("login");
   }
 });

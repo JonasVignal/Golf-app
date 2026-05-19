@@ -465,9 +465,13 @@ function isInAppBrowser() {
     (ua.includes('wv') && ua.includes('Android'));
 }
 
-// 1. ATTACH LISTENERS — Always use signInWithPopup first (works on mobile
-//    when triggered by a direct user click).  Only fall back to redirect
-//    if the popup is explicitly blocked by the browser.
+// Detect mobile browsers — signInWithPopup is unreliable on mobile
+// (Safari ITP blocks 3rd-party cookies needed for popup auth handshake).
+// Firebase's own recommendation: use signInWithRedirect on mobile.
+function isMobile() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
 if ($("signInBtn")) {
   // Show in-app browser warning if needed
   if (isInAppBrowser()) {
@@ -488,31 +492,33 @@ if ($("signInBtn")) {
 
     if (errorNote) errorNote.textContent = "Connecting to Google...";
 
-    // Mark a popup as in-flight so onAuthStateChanged doesn't show login
-    // if it fires null during the popup handshake.
-    popupPending = true;
-    pendingShowLogin = false;
+    if (isMobile()) {
+      // On mobile: always use redirect — it's the only reliable method
+      // because popup auth requires 3rd-party cookies that Safari blocks.
+      signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+    } else {
+      // On desktop: popup is faster and doesn't reload the page
+      popupPending = true;
+      pendingShowLogin = false;
 
-    signInWithPopup(auth, googleProvider)
-      .then(() => {
-        popupPending = false;
-        if (errorNote) errorNote.textContent = "";
-      })
-      .catch((e) => {
-        popupPending = false;
-        if (e.code === "auth/popup-blocked" || e.code === "auth/popup-closed-by-browser") {
-          // Last-resort fallback — only when the browser actively blocked the popup
-          if (errorNote) errorNote.textContent = "Popup blocked — redirecting...";
-          signInWithRedirect(auth, googleProvider).catch(handleAuthError);
-        } else if (e.code === "auth/cancelled-popup-request") {
-          // User double-clicked or a previous popup was still open — ignore
+      signInWithPopup(auth, googleProvider)
+        .then(() => {
+          popupPending = false;
           if (errorNote) errorNote.textContent = "";
-        } else {
-          handleAuthError(e);
-          // Show login only if sign-in genuinely failed
-          if (!auth.currentUser) show("login");
-        }
-      });
+        })
+        .catch((e) => {
+          popupPending = false;
+          if (e.code === "auth/popup-blocked" || e.code === "auth/popup-closed-by-browser") {
+            if (errorNote) errorNote.textContent = "Popup blocked — redirecting...";
+            signInWithRedirect(auth, googleProvider).catch(handleAuthError);
+          } else if (e.code === "auth/cancelled-popup-request") {
+            if (errorNote) errorNote.textContent = "";
+          } else {
+            handleAuthError(e);
+            if (!auth.currentUser) show("login");
+          }
+        });
+    }
   });
 }
 
@@ -571,7 +577,11 @@ onAuthStateChanged(auth, user => {
     const sid = localStorage.getItem("gm_gid");
     if (sid) {
       gameId = sid; gameRef = ref(db, `games/${gameId}`);
-      attachListener();
+      // Small delay: give the Firebase Realtime Database connection time to
+      // receive the auth token before making the first read. Without this,
+      // the DB can reject the request with "permission denied" even though
+      // the user is authenticated, because the token hasn't arrived yet.
+      setTimeout(() => attachListener(), 500);
     } else {
       showLobby(user);
     }

@@ -527,19 +527,19 @@ if ($("lobbySignOut")) {
 //  AUTH CYCLE
 // ═══════════════════════════════════════════════════════
 
-// Flag: true while we are still checking whether the page load is a
-// redirect-sign-in return (only relevant for the redirect fallback).
+// Flag: true while we are still waiting for getRedirectResult to settle.
+// onAuthStateChanged will not show the login screen until this is false.
 let redirectPending = true;
 
-// Check for a pending redirect result (resolves instantly with null
-// on a normal page load, so the flag is cleared almost immediately).
+// getRedirectResult resolves instantly with null on a normal (non-redirect)
+// page load, so redirectPending is cleared almost immediately.
+// On a redirect-sign-in return it resolves with the signed-in user.
 getRedirectResult(auth)
-  .then((result) => {
+  .then(() => {
     redirectPending = false;
-    if (redirectPending === false && !auth.currentUser && !result?.user) {
-      // No redirect result and no cached user — show login screen now
-      show("login");
-    }
+    // If onAuthStateChanged already fired with no user (and skipped because
+    // redirectPending was true), and there's still no user now, show login.
+    if (!auth.currentUser) show("login");
   })
   .catch((e) => {
     redirectPending = false;
@@ -818,7 +818,19 @@ function renderWaiting(d) {
 // ═══════════════════════════════════════════════════════
 function attachListener() {
   if (gameRef) off(gameRef);
-  onValue(gameRef, snap => { if (!snap.exists()) return; gameData = snap.val(); handleUpdate(gameData); });
+  onValue(
+    gameRef,
+    snap => { if (!snap.exists()) return; gameData = snap.val(); handleUpdate(gameData); },
+    (err) => {
+      // Firebase rules denied the read — most likely the user's auth token
+      // hasn't propagated yet. Sign out cleanly so they can retry.
+      console.error("DB permission error:", err.code, err.message);
+      const errEl = $("loginError");
+      if (errEl) errEl.textContent = "Session error — please sign in again.";
+      cleanup();
+      show("login");
+    }
+  );
 }
 
 function handleUpdate(d) {
